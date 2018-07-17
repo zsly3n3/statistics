@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-     <div class="navTitle">
+  <div class="navTitle" v-if="isShow">
     <div class="navTitleDiv">
     <table border="0" cellpadding="0" cellspacing="0">
     <tr>
@@ -11,9 +11,9 @@
     </table>
     <div id="navTitleline" v-bind:class="{ navTitlelineTransition: isTransition }"></div>
     </div>
-    </div>
+  </div>
      <keep-alive>
-      <router-view @switchroute="switchRoute"></router-view>
+      <router-view @switchroute="switchRoute" @isHideNav="isHideNav"></router-view>
      </keep-alive>
   </div>
 </template>
@@ -26,7 +26,8 @@ export default {
       isSubmitted1: false,
       isSubmitted2: false,
       isSubmitted3: false,
-      isTransition: false
+      isTransition: false,
+      isShow: true
     }
   },
   mounted: function () {
@@ -41,6 +42,12 @@ export default {
       this.updateLabelStatus(path)
       if (path !== this.$route.path) {
         this.$router.push({ path: path })
+      }
+    },
+    isHideNav: function (isHide) {
+      this.isShow = true
+      if (isHide === true) {
+        this.isShow = false
       }
     },
     updateLabelStatus: function (path) {
