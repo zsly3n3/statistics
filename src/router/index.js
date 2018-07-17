@@ -4,7 +4,7 @@ import login from '@/components/login'
 import insert from '@/components/insert'
 Vue.use(Router)
 
-export default new Router({
+var router = new Router({
   mode: 'history',
   routes: [
     {
@@ -19,3 +19,14 @@ export default new Router({
     }
   ]
 })
+router.beforeEach(function (to, from, next) {
+  var auth = true
+  if (!auth && to.name !== 'login') {
+    next({name: 'login'})
+  } else if (to.name === 'login' && auth) {
+    next({name: 'insert'})
+  } else {
+    next()
+  }
+})
+export default router
