@@ -1,15 +1,7 @@
 <template>
   <div>
-    <select v-model="ppselected">
-        <option v-for="item in types" :key="item.id" :value="item.id">
-          {{item.type}}
-        </option>
-    </select>
-<p>{{ppselected}}</p>
-<button @click="test"></button>
-<br>
-<br>
-  <el-date-picker
+    <div class="title">
+      <el-date-picker
       v-model="value7"
       type="daterange"
       align="right"
@@ -20,7 +12,39 @@
       :picker-options="pickerOptions"
       format="yyyy 年 MM 月 dd 日"
       value-format="timestamp">
-    </el-date-picker>
+      </el-date-picker>
+    </div>
+    <div class="tableDiv">
+<el-table
+    :data="excelData"
+    height="250"
+    border>
+    <el-table-column
+      label="桌号"
+      width="130"
+      align="center">
+      <template slot-scope="scope" class="bg">
+       <el-input v-model="input" placeholder="请输入内容"></el-input>
+      </template>
+    </el-table-column>
+    <el-table-column
+      label="联盟"
+      width="80"
+      align="center">
+      <template slot-scope="scope">
+        <select v-model="ppselected">
+        <option v-for="item in types" :key="item.id" :value="item.id">
+          {{item.type}}
+        </option>
+     </select>
+      </template>
+    </el-table-column>
+  </el-table>
+  </div>
+<p>{{ppselected}}</p>
+<button @click="test"></button>
+<br>
+<br>
 <input type="file" @change="importFile(this)" id="imFile" style="display: none" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"/>
   <el-button class="button" @click="uploadFile()">导入</el-button>
   <!--错误信息提示-->
@@ -30,17 +54,6 @@
     <el-button type="primary" @click="errorDialog=false">确认</el-button>
   </span>
   </el-dialog>
-  <!--展示导入信息-->
-  <el-table :data="excelData" tooltip-effect="dark" v-loading="loading"
-    element-loading-text="拼命加载中"
-    element-loading-spinner="el-icon-loading"
-    element-loading-background="rgba(0, 0, 0, 0.8)">
-<el-table-column label="名称" prop="name" show-overflow-tooltip></el-table-column>
-<el-table-column label="分量" prop="size" show-overflow-tooltip></el-table-column>
-<el-table-column label="口味" prop="taste" show-overflow-tooltip></el-table-column>
-<el-table-column label="单价(元)" prop="price" show-overflow-tooltip></el-table-column>
-<el-table-column label="剩余(份)" prop="remain" show-overflow-tooltip></el-table-column>
-  </el-table>
   </div>
 </template>
 <script>
@@ -51,7 +64,7 @@ export default {
     return {
       ppselected: 0,
       types: [
-        {type: 'typeA', id: 0}, {type: 'typeB', id: 1}, {type: 'typeC', id: 2}
+        {type: 'a', id: 0}, {type: 'b', id: 1}, {type: 'c', id: 2}
       ],
       pickerOptions: {
         shortcuts: [
@@ -177,8 +190,24 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
+.title{
+  margin-top:10px;
+  text-align: center;
+  margin-bottom: 10px;
+}
+.tableDiv{
+   /* width:100%; */
+   margin-left:10px;
+   margin-right:10px;
+}
 .el-table th>.cell {
   text-align: center;
+}
+.el-table{
+  width: 100%;
+}
+.bg{
+  background: #409EFF;
 }
 .button {
   margin-bottom: 20px;
