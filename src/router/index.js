@@ -2,6 +2,8 @@ import Vue from 'vue'
 import Router from 'vue-router'
 import login from '@/components/login'
 import insert from '@/components/insert'
+import global from '@/components/Global'
+Vue.prototype.global = global
 Vue.use(Router)
 
 var router = new Router({
@@ -20,10 +22,11 @@ var router = new Router({
   ]
 })
 router.beforeEach(function (to, from, next) {
-  var auth = false
-  if (!auth && to.name !== 'login') {
+  var levelKey = Vue.prototype.global.levelKey
+  var auth = localStorage.getItem(levelKey)
+  if (auth === null && to.name !== 'login') {
     next({name: 'login'})
-  } else if (to.name === 'login' && auth) {
+  } else if (to.name === 'login' && auth !== null) {
     next({name: 'insert'})
   } else {
     next()

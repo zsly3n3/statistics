@@ -33,7 +33,10 @@ export default {
           var code = res['data']['code']
           var msg = this.global.codeError[code]
           if (msg === undefined) {
-            alert('成功')
+            var levelKey = this.global.levelKey
+            var level = res['data'][levelKey]
+            localStorage.setItem(levelKey, level)
+            this.$router.push('/')
           } else {
             alert(msg)
           }

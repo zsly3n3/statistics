@@ -1,5 +1,6 @@
 <script type="text/javascript">
 const serverPath = 'http://127.0.0.1:8181'
+const levelKey = 'level'
 const codeError = {
   1: '参数错误,数据为空或者类型不对等',
   2: '登录失败,如无此账号或者密码错误等',
@@ -11,6 +12,7 @@ const codeError = {
 }
 export default{
   serverPath,
-  codeError
+  codeError,
+  levelKey
 }
 </script>
