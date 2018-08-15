@@ -20,7 +20,7 @@ var router = new Router({
   ]
 })
 router.beforeEach(function (to, from, next) {
-  var auth = true
+  var auth = false
   if (!auth && to.name !== 'login') {
     next({name: 'login'})
   } else if (to.name === 'login' && auth) {

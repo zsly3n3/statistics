@@ -28,8 +28,13 @@ export default {
   },
   methods: {
     login: function () {
-      alert(this.account)
-      alert(this.pwd)
+      this.$http.post('http://localhost:8181/login', {name: this.account, pwd: this.pwd}, {emulateJSON: true})
+        .then((response) => {
+          console.log(response)
+        }, (error) => {
+          console.log(error)
+        }
+        )
     }
   }
 }
