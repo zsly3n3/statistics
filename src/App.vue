@@ -96,6 +96,7 @@ export default {
 .navTitle{
    width: 100%;
    height:40px;
+   background-color: #409EFF;
 }
 .navTitleDiv{
   float:left;
@@ -114,7 +115,7 @@ export default {
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
-  color: #888ba2;
+  color: white;
   border: 0px none;
   outline: none;
   margin-right:20px;
@@ -122,13 +123,13 @@ export default {
   font-weight:normal;
 }
 .navTitlelabel:hover{
-  color:#4b59bc;
+  color:wheat;
   border: none;
   cursor: hand;
   cursor: pointer;
 }
 .navTitlelabelVisited{
-  color: #4b59bc;
+  color: wheat;
 }
 .navTitlelineTransition{
   transition: margin-left 0.3s ;
@@ -138,6 +139,6 @@ export default {
   width:40px;
   height:3px;
   margin-top:0px;
-  background-color: #4b59bc;
+  background-color: wheat;
 }
 </style>
