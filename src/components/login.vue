@@ -28,13 +28,20 @@ export default {
   },
   methods: {
     login: function () {
-      this.$http.post('http://localhost:8181/login', {name: this.account, pwd: this.pwd}, {emulateJSON: true})
-        .then((response) => {
-          console.log(response)
-        }, (error) => {
-          console.log(error)
-        }
-        )
+      this.$http.post(this.global.serverPath + '/login', JSON.stringify({name: this.account, pwd: this.pwd}))
+        .then(res => {
+          var code = res['data']['code']
+          var msg = this.global.codeError[code]
+          if (msg === undefined) {
+            alert('成功')
+          } else {
+            alert(msg)
+          }
+        })
+        .catch(err => {
+          console.log('err:')
+          console.log(err)
+        })
     }
   }
 }
