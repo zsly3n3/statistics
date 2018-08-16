@@ -36,7 +36,7 @@
         <option v-for="item in types" :key="item.id" :value="item.id">
           {{item.type}}
         </option>
-     </select>
+        </select>
       </template>
     </el-table-column>
   </el-table>
@@ -46,15 +46,14 @@
 <br>
 <br>
 <input type="file" @change="importFile(this)" id="imFile" style="display: none" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"/>
-  <el-button class="button" @click="uploadFile()">导入</el-button>
-  <!--错误信息提示-->
-  <el-dialog title="提示" v-model="errorDialog" size="tiny">
+<el-button class="button" @click="uploadFile()">导入</el-button>
+<el-dialog title="提示" v-model="errorDialog" size="tiny">
 <span>{{errorMsg}}</span>
-  <span slot="footer" class="dialog-footer">
+<span slot="footer" class="dialog-footer">
     <el-button type="primary" @click="errorDialog=false">确认</el-button>
-  </span>
-  </el-dialog>
-  </div>
+</span>
+</el-dialog>
+</div>
 </template>
 <script>
 var XLSX = require('xlsx')
@@ -97,6 +96,7 @@ export default {
           }
         ]
       },
+      input: '',
       value7: '',
       imFile: '', // 导入文件el
       errorDialog: false, // 错误信息弹窗

@@ -5,7 +5,7 @@
     <table border="0" cellpadding="0" cellspacing="0">
     <tr>
     <td class="navTitleTabletd"><label :class="{ navTitlelabelVisited: isSubmitted1 }" id="btnHome" @click="switchRoute('/')" class="navTitlelabel" >数据导入</label></td>
-    <td class="navTitleTabletd"><label :class="{ navTitlelabelVisited: isSubmitted2 }" id="btnAbout" @click="switchRoute('/aboutus')" class="navTitlelabel" >查询数据</label></td>
+    <td class="navTitleTabletd"><label :class="{ navTitlelabelVisited: isSubmitted2 }" id="btnAbout" @click="switchRoute('/gameid')" class="navTitlelabel" >账号关联</label></td>
     <td class="navTitleTabletd"><label :class="{ navTitlelabelVisited: isSubmitted3 }" id="btnGallery" @click="switchRoute('/gallery')" class="navTitlelabel" >每日统计</label></td>
     </tr>
     </table>
@@ -64,7 +64,7 @@ export default {
           this.isSubmitted3 = false
           lineWidth = btnHome.offsetWidth
           break
-        case '/aboutus':
+        case '/gameid':
           this.isSubmitted1 = false
           this.isSubmitted2 = true
           this.isSubmitted3 = false

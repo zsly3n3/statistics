@@ -38,12 +38,11 @@ export default {
             localStorage.setItem(levelKey, level)
             this.$router.push('/')
           } else {
-            alert(msg)
+            this.$message.error(msg)
           }
         })
         .catch(err => {
-          console.log('err:')
-          console.log(err)
+          this.$message.error(err)
         })
     }
   }

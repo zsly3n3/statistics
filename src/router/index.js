@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import login from '@/components/login'
+import gameid from '@/components/gameid'
 import insert from '@/components/insert'
 import global from '@/components/Global'
 Vue.prototype.global = global
@@ -18,6 +19,11 @@ var router = new Router({
       path: '/login',
       name: 'login',
       component: login
+    },
+    {
+      path: '/gameid',
+      name: 'gameid',
+      component: gameid
     }
   ]
 })
