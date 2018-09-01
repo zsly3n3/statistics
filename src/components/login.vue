@@ -1,17 +1,18 @@
 <template>
   <div>
-      <div class="d1"><p>登录</p></div>
+      <div class="d1"><p class="font">登录</p></div>
       <table cellpadding="0" cellspacing="0">
           <tr>
-            <td><p>账号:&nbsp;&nbsp;</p></td>
-            <td><input v-model="account" placeholder="输入账号"></td>
+            <td><p class="font">账号:&nbsp;&nbsp;</p></td>
+            <td><el-input v-model="account" placeholder="输入账号"></el-input></td>
           </tr>
           <tr>
-            <td><p>密码:&nbsp;&nbsp;</p></td>
-            <td><input type="password" v-model="pwd" placeholder="输入密码"></td>
+            <td><p class="font">密码:&nbsp;&nbsp;</p></td>
+            <td><el-input type="password" v-model="pwd" placeholder="输入密码"></el-input></td>
           </tr>
       </table>
-      <div class="d2"><button @click="login">确认登录</button></div>
+
+      <div class="d2"><el-button type="primary" @click="login">确认登录</el-button></div>
   </div>
 </template>
 <script>
@@ -23,7 +24,7 @@ export default {
       pwd: ''
     }
   },
-  created: function () {
+  mounted: function () {
     this.$emit('isHideNav', true)
   },
   methods: {
@@ -37,6 +38,7 @@ export default {
             var level = res['data'][levelKey]
             localStorage.setItem(levelKey, level)
             this.$router.push('/')
+            this.$emit('isHideNav', false)
           } else {
             this.$message.error(msg)
           }
@@ -51,9 +53,11 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
+.font{
+font-size: 25px;
+}
 .d1{
   text-align: center;
-  font-size: 20px;
 }
 .d2{
     text-align: center;

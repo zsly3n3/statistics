@@ -1,8 +1,13 @@
 <template>
-  <div>
+  <div v-loading="querying"
+    element-loading-text="执行中"
+    element-loading-spinner="el-icon-loading"
+    element-loading-background="rgba(0, 0, 0, 0.8)">
     <div class="title">
+      <el-button class="btnInsert" type="primary" @click="addRow">新增</el-button>
       <el-date-picker
-      v-model="value7"
+      class="datePicker"
+      v-model="timestampValue"
       type="daterange"
       align="right"
       unlink-panels
@@ -13,46 +18,164 @@
       format="yyyy 年 MM 月 dd 日"
       value-format="timestamp">
       </el-date-picker>
+      <el-button class="btnCommit" type="success" @click="postData">提交</el-button>
     </div>
-    <div class="tableDiv">
 <el-table
     :data="excelData"
-    height="250"
+    :row-style="rowClass"
+    @selection-change="handleSelectionChange"
     border>
+    <el-table-column
+      type="selection"
+      width="55">
+    </el-table-column>
     <el-table-column
       label="桌号"
       width="130"
       align="center">
-      <template slot-scope="scope" class="bg">
-       <el-input v-model="input" placeholder="请输入内容"></el-input>
+      <template slot-scope="scope">
+       <el-input v-model="scope.row.tableId" placeholder="请输入桌号"></el-input>
       </template>
     </el-table-column>
     <el-table-column
       label="联盟"
+      width="110"
+      align="center">
+      <template slot-scope="scope">
+        <el-select v-model="scope.row.leagueId">
+          <el-option v-for="item in scope.row.types" :key="item.Id" :label="item.Name" :value="item.Id">
+          </el-option>
+        </el-select>
+      </template>
+    </el-table-column>
+     <el-table-column
+      label="游戏ID"
+      width="160"
+      align="center">
+      <template slot-scope="scope">
+       <el-input v-model="scope.row.gid" placeholder="请输入游戏ID" v-on:change="getTR(scope.$index)"></el-input>
+      </template>
+    </el-table-column>
+    <el-table-column
+        prop="tid"
+        label="玩家账号"
+        width="160"
+        align="center">
+    </el-table-column>
+    <el-table-column
+      label="带入积分"
+      width="130"
+      align="center">
+      <template slot-scope="scope">
+       <el-input v-model="scope.row.score" placeholder="请输入积分" v-on:change="computeJieYu(scope.$index)"></el-input>
+      </template>
+    </el-table-column>
+    <el-table-column
+      label="战绩(正负数)"
+      width="212"
+      align="center">
+      <template slot-scope="scope">
+       <el-input style="width:110px;" v-model="scope.row.record" placeholder="请输入战绩" v-on:change="computeJieYu(scope.$index)"></el-input>
+       <el-select v-on:change="computeJieYu(scope.$index)" style="width:76px;" v-model="scope.row.percent">
+          <el-option v-for="item in scope.row.percents" :key="item.label" :label="item.label" :value="item.value">
+       </el-option>
+       </el-select>
+      </template>
+    </el-table-column>
+     <el-table-column
+        prop="jieyu"
+        label="结余"
+        width="100"
+        align="center">
+    </el-table-column>
+    <el-table-column
+      label="保险"
+      width="130"
+      align="center">
+      <template slot-scope="scope">
+       <el-input v-on:change="computeBaoXianHuoDongShu(scope.$index,true)" v-model="scope.row.baoxian" placeholder="请输入保险"></el-input>
+      </template>
+    </el-table-column>
+ <el-table-column
+      label="保险返利"
+      width="110"
+      align="center">
+      <template slot-scope="scope">
+       <el-select v-on:change="computeBaoXianHuoDongShu(scope.$index,false)" v-model="scope.row.baoxianfanli">
+          <el-option v-for="item in scope.row.fanli" :key="item.label" :label="item.label" :value="item.value">
+       </el-option>
+       </el-select>
+      </template>
+    </el-table-column>
+     <el-table-column
+        prop="baoxianrs"
+        label="保险活动数"
+        width="160"
+        align="center">
+    </el-table-column>
+    <el-table-column
+        prop="rid"
+        label="推荐人"
+        width="160"
+        align="center">
+    </el-table-column>
+    <el-table-column
+      label="推荐人返利"
+      width="110"
+      align="center">
+      <template slot-scope="scope">
+       <el-select v-if="scope.row.isShowReferrer" v-on:change="computeRgain(scope.$index)" v-model="scope.row.rgainper">
+          <el-option v-for="item in scope.row.fanli" :key="item.label" :label="item.label" :value="item.value">
+       </el-option>
+       </el-select>
+      </template>
+    </el-table-column>
+    <el-table-column
+        label="推荐人返利结果"
+        width="120"
+        align="center">
+      <template slot-scope="scope">
+       <p v-if="scope.row.isShowReferrer">{{scope.row.rgain}}</p>
+      </template>
+    </el-table-column>
+    <el-table-column
+        label="结算时间"
+        width="150"
+        align="center">
+      <template slot-scope="scope">
+        <el-time-picker style="width:120px;"
+    v-model="scope.row.time"
+    :picker-options="{
+      selectableRange: '00:00:00 - 23:59:00'
+    }"
+    placeholder="选择时间">
+  </el-time-picker>
+      </template>
+    </el-table-column>
+  <el-table-column
+      label="是否结算"
       width="80"
       align="center">
       <template slot-scope="scope">
-        <select v-model="ppselected">
-        <option v-for="item in types" :key="item.id" :value="item.id">
-          {{item.type}}
-        </option>
-        </select>
+       <el-select v-model="scope.row.isSettled">
+         <el-option v-for="item in scope.row.jiesuan" :key="item.label" :label="item.label" :value="item.value">
+         </el-option>
+       </el-select>
       </template>
     </el-table-column>
-  </el-table>
-  </div>
-<p>{{ppselected}}</p>
+</el-table>
+<!--
 <button @click="test"></button>
 <br>
 <br>
 <input type="file" @change="importFile(this)" id="imFile" style="display: none" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"/>
-<el-button class="button" @click="uploadFile()">导入</el-button>
-<el-dialog title="提示" v-model="errorDialog" size="tiny">
+<el-button class="button" @click="uploadFile()">导入</el-button> -->
+<!-- <el-dialog title="提示" v-model="errorDialog" size="tiny">
 <span>{{errorMsg}}</span>
 <span slot="footer" class="dialog-footer">
     <el-button type="primary" @click="errorDialog=false">确认</el-button>
 </span>
-</el-dialog>
+</el-dialog> -->
 </div>
 </template>
 <script>
@@ -61,10 +184,7 @@ export default {
   name: 'insert',
   data () {
     return {
-      ppselected: 0,
-      types: [
-        {type: 'a', id: 0}, {type: 'b', id: 1}, {type: 'c', id: 2}
-      ],
+      querying: false,
       pickerOptions: {
         shortcuts: [
           {
@@ -96,32 +216,64 @@ export default {
           }
         ]
       },
-      input: '',
-      value7: '',
-      imFile: '', // 导入文件el
-      errorDialog: false, // 错误信息弹窗
+      timestampValue: '',
+      types: [],
+      percents: [
+        {label: '0', value: 0.0},
+        {label: '3%', value: 0.97},
+        {label: '5%', value: 0.95}
+      ],
+      fanli: [
+        {label: '10%', value: 0.1},
+        {label: '15%', value: 0.15},
+        {label: '20%', value: 0.2}
+      ],
+      jiesuan: [
+        {label: 'x', value: false},
+        {label: '√', value: true}
+      ],
       errorMsg: '', // 错误信息内容
-      loading: false,
       excelData: [
-        {
-          name: '红烧鱼', size: '大', taste: '微辣', price: '40', remain: '100'
-        },
-        {
-          name: '麻辣小龙虾', size: '大', taste: '麻辣', price: '138', remain: '200'
-        }
-      ]
+      ],
+      multipleSelection: [],
+      imFile: '', // 导入文件el
+      errorDialog: false // 错误信息弹窗
     }
   },
   created: function () {
     this.$emit('isHideNav', false)
   },
   mounted: function () {
+    this.querying = true
+    this.$http.get(this.global.serverPath + '/getleague')
+      .then(res => {
+        this.types = res['data']
+        this.querying = false
+      })
+      .catch(err => {
+        this.$message.error(err)
+        this.querying = false
+      })
     this.imFile = document.getElementById('imFile')
+    window.setInterval(this.computeTime, 1000)
   },
   activated: function () {
     this.$emit('switchroute', '/')
   },
   methods: {
+    rowClass: function ({row, rowIndex}) {
+      if (row.isSettled === true) {
+        return {'background-color': 'red'}
+      }
+      if (row.isTimeOut === true) {
+        return {'background-color': 'blue'}
+      }
+      return {'background-color': 'white'}
+    },
+    handleSelectionChange: function (val) {
+      this.multipleSelection = val
+      console.log(this.multipleSelection)
+    },
     test: function () {
       console.log(this.value7[0])
       console.log(this.value7[1])
@@ -132,11 +284,11 @@ export default {
     uploadFile: function () {
       this.imFile.click()
     },
-    importFile: function () { // 导入excel
-      this.loading = true
+    importFile2: function () { // 导入excel
+      this.querying = true
       let obj = this.imFile
       if (!obj.files) {
-        this.loading = false
+        this.querying = false
         return
       }
       var f = obj.files[0]
@@ -159,13 +311,58 @@ export default {
         reader.readAsBinaryString(f)
       }
     },
+    importFile: function () {
+      this.file = event.currentTarget.files[0]
+      var rABS = false
+      var f = this.file
+      var reader = new FileReader()
+      FileReader.prototype.readAsBinaryString = function (f) {
+        var binary = ''
+        var rABS = false
+        var wb
+        var outdata
+        var reader = new FileReader()
+        reader.onload = function (e) {
+          var bytes = new Uint8Array(reader.result)
+          var length = bytes.byteLength
+          for (var i = 0; i < length; i++) {
+            binary += String.fromCharCode(bytes[i])
+          }
+          if (rABS) {
+            wb = XLSX.read(btoa(this.fixdata(binary)), {
+              type: 'base64'
+            })
+          } else {
+            wb = XLSX.read(binary, {
+              type: 'binary'
+            })
+          }
+          outdata = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]])
+          this.da = [...outdata]
+          let arr = []
+          this.da.map(v => {
+            let obj = {}
+            obj.size = v.size
+            obj.name = v.name
+            arr.push(obj)
+          })
+          console.log(arr)
+        }
+        reader.readAsArrayBuffer(f)
+      }
+      if (rABS) {
+        reader.readAsArrayBuffer(f)
+      } else {
+        reader.readAsBinaryString(f)
+      }
+    },
     analyzeData: function (data) {
       return data
     },
     dealFile: function (data) {
       console.log(data)
       this.imFile.value = ''
-      this.loading = false
+      this.querying = false
       if (data.length <= 0) {
         this.errorDialog = true
         this.errorMsg = '请导入正确信息'
@@ -183,6 +380,130 @@ export default {
       }
       o += String.fromCharCode.apply(null, new Uint8Array(data.slice(l * w)))
       return o
+    },
+    addRow: function () {
+      var tmpData = {isCheck: false, isSettled: false, isTimeOut: false, time: null, isShowReferrer: false, tid_id: 0, rid_id: 0, tableId: '', leagueId: '', gid: '', tid: '', rid: '', score: '', record: '', percent: 0, jieyu: '', baoxian: '', baoxianfanli: 0.1, baoxianrs: '', rgainper: 0.1, rgain: '', percents: null, fanli: null, jiesuan: null, types: null}
+      tmpData.percents = this.percents
+      tmpData.types = this.types
+      tmpData.fanli = this.fanli
+      tmpData.jiesuan = this.jiesuan
+      this.excelData.splice(0, 0, tmpData)
+    },
+    postData: function () {
+      var date = this.excelData[0].time
+      console.log(date.getHours())
+      console.log(date.getMinutes())
+      console.log(date.getSeconds())
+    },
+    getTR: function (index) {
+      this.querying = true
+      let url = '/getTRWithGName/' + this.excelData[index].gid
+      this.$http.get(this.global.serverPath + url)
+        .then(res => {
+          let data = res['data']['data']
+          if (data === null) {
+            this.querying = false
+            this.excelData[index].tid = ''
+            this.excelData[index].rid = ''
+            this.excelData[index].tid_id = 0
+            this.excelData[index].rid_id = 0
+            this.excelData[index].isShowReferrer = false
+            return
+          }
+          this.excelData[index].tid = data['tid']
+          this.excelData[index].rid = data['rid']
+          this.excelData[index].tid_id = data['tid_id']
+          let ridId = data['rid_id']
+          this.excelData[index].rid_id = ridId
+          this.excelData[index].isShowReferrer = ridId <= 0 ? 'false' : 'true'
+          this.querying = false
+        })
+        .catch(err => {
+          this.$message.error(err)
+          this.querying = false
+        })
+    },
+    getTRs: function () {
+    },
+    computeJieYu: function (index) {
+      let score = this.getNumber(this.excelData[index].score, index, 'score', '带入积分')
+      let record = this.getNumber(this.excelData[index].record, index, 'record', '战绩')
+      let percent = this.excelData[index].percent
+      var rs
+      if (record > 0) {
+        let tmp = (record * percent).toFixed(0)
+        rs = Number(tmp) + score
+      } else {
+        rs = record + score
+      }
+      this.excelData[index].jieyu = rs.toFixed(4)
+    },
+    computeBaoXianHuoDongShu: function (index, isUpdateReferrer) {
+      let bx = this.getNumber(this.excelData[index].baoxian, index, 'baoxian', '保险')
+      let percent = this.excelData[index].baoxianfanli
+      var rs
+      if (bx >= 0) {
+        rs = (bx * percent).toFixed(4)
+      } else {
+        rs = parseInt(bx * -(0.1))
+      }
+      this.excelData[index].baoxianrs = rs
+      if (isUpdateReferrer === true) {
+        this.computeRgain(index)
+      }
+    },
+    computeRgain: function (index) {
+      let bx = this.getNumber(this.excelData[index].baoxian, index, 'baoxian', '保险')
+      let percent = this.excelData[index].rgainper
+      var rs
+      if (bx > 0) {
+        rs = (bx * percent).toFixed(4)
+      } else {
+        rs = 0
+      }
+      this.excelData[index].rgain = rs
+    },
+    computeTime: function () {
+      for (var i = 0; i < this.excelData.length; i++) {
+        let date = this.excelData[i].time
+        var rs = false
+        if (date !== null) {
+          let current = new Date()
+          let hour = date.getHours()
+          let min = date.getMinutes()
+          let sec = date.getSeconds()
+          let cH = current.getHours()
+          let cM = current.getMinutes()
+          let cS = current.getSeconds()
+          if (cH > hour) {
+            rs = true
+          } else if (cH === hour) {
+            if (cM > min) {
+              rs = true
+            } else if (cM === min) {
+              if (cS >= sec) {
+                rs = true
+              }
+            }
+          }
+        }
+        this.excelData[i].isTimeOut = rs
+      }
+    },
+    getNumber: function (str, index, key, field) {
+      var rs
+      if (str === '') {
+        rs = 0
+      } else {
+        rs = Number(str)
+        if (isNaN(rs)) {
+          let errStr = '第' + (index + 1) + '行中的' + field + '字段,输入的不是数字格式!'
+          this.$message.error(errStr)
+          this.excelData[index][key] = ''
+          rs = 0
+        }
+      }
+      return rs
     }
   }
 }
@@ -191,9 +512,9 @@ export default {
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
 .title{
-  margin-top:10px;
+  margin-top:20px;
   text-align: center;
-  margin-bottom: 10px;
+  margin-bottom: 20px;
 }
 .tableDiv{
    /* width:100%; */
@@ -206,10 +527,32 @@ export default {
 .el-table{
   width: 100%;
 }
-.bg{
-  background: #409EFF;
-}
 .button {
   margin-bottom: 20px;
 }
+.btnInsert{
+  float: left;
+  margin-left:60px;
+}
+.btnCommit{
+  float: right;
+  margin-right:60px;
+}
+.datePicker{
+  width:370px;
+}
+
+/* .el-table--enable-row-hover .el-table__body tr:hover > td {
+  background-color: blue !important;
+}
+.el-table__body tr.el-table__row.hover-row>td{
+background-color:blue !important;
+}
+.el-table .warning-row {
+  background: yellow !important;
+}
+
+.el-table .success-row {
+  background: green !important;
+} */
 </style>

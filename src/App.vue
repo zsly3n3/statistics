@@ -1,6 +1,7 @@
 <template>
   <div id="app">
   <div class="navTitle" v-if="isShow">
+   <el-button class="btnExit" type="danger" @click="exit">退出登录</el-button>
     <div class="navTitleDiv">
     <table border="0" cellpadding="0" cellspacing="0">
     <tr>
@@ -38,6 +39,20 @@ export default {
     }, 20)
   },
   methods: {
+    exit: function () {
+      this.$confirm('是否退出登录?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+        center: true
+      }).then(() => {
+        let levelKey = this.global.levelKey
+        localStorage.removeItem(levelKey)
+        this.$router.push({name: 'login'})
+        this.isHideNav(true)
+      }).catch(() => {
+      })
+    },
     switchRoute: function (path) {
       this.updateLabelStatus(path)
       if (path !== this.$route.path) {
@@ -95,12 +110,12 @@ export default {
 }
 .navTitle{
    width: 100%;
-   height:40px;
+   height:60px;
    background-color: #409EFF;
 }
 .navTitleDiv{
   float:left;
-  margin-top:5px;
+  margin-top:15px;
   margin-left:4%;
 }
 .navTitleTabletd{
@@ -140,5 +155,10 @@ export default {
   height:3px;
   margin-top:0px;
   background-color: wheat;
+}
+.btnExit{
+  float: right;
+  margin-top:10px;
+  margin-right:48px;
 }
 </style>

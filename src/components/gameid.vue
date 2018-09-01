@@ -1,6 +1,6 @@
 <template>
   <div v-loading="querying"
-    element-loading-text="查询中"
+    element-loading-text="执行中"
     element-loading-spinner="el-icon-loading"
     element-loading-background="rgba(0, 0, 0, 0.8)">
     <div class="d1">
@@ -22,26 +22,28 @@
      </table>
     </div>
     <hr>
-    <div v-if="showRS" class="d2">
-      <el-table
-      :data="tableData"
-      style="width: 100%">
-      <el-table-column
-        prop="tid"
-        label="玩家账号"
-        width="150">
-      </el-table-column>
-      <el-table-column
-        prop="gid"
-        label="游戏ID"
-        >
-      </el-table-column>
-      <el-table-column
-        prop="rid"
-        label="推荐人"
-        width="150">
-      </el-table-column>
-    </el-table>
+    <div class="d2">
+      <el-table :data="tableData" :border="true" style="width: 100%">
+        <el-table-column label="玩家账号" width="280">
+          <template slot-scope="scope">
+            <el-input v-if="scope.row.showTid" v-model="scope.row.tid" ></el-input>
+          </template>
+        </el-table-column>
+        <el-table-column label="游戏ID">
+          <template slot-scope="scope">
+            <el-input v-on:change="gidChange(scope.row.gid,scope.$index)" style="width:300px;" v-model="scope.row.gid"></el-input>
+            <el-button v-if="scope.row.showBtn" class="removeBtn" size="mini" type="danger" @click="deleteRow(scope.$index)">删除</el-button>
+          </template>
+        </el-table-column>
+        <el-table-column label="推荐人" width="280">
+          <template slot-scope="scope">
+            <el-input v-if="scope.row.showRid" v-model="scope.row.rid"></el-input>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
+    <div class="d3">
+       <el-button type="success" @click="insertgidtidrid">提交</el-button>
     </div>
   </div>
 </template>
@@ -53,12 +55,11 @@ export default {
       querying: false,
       queryIndex: 0,
       queryText: '',
-      showRS: true,
       types: [
         {label: '玩家账号', id: 0}, {label: '游戏ID', id: 1}, {label: '推荐人', id: 2}
       ],
       tableData: [
-        {tid: 'wx_123213', gid: 'gameid_123', rid: '等我'}
+        {tid: '', gid: '', rid: '', showBtn: false, showTid: true, showRid: true}
       ]
     }
   },
@@ -88,9 +89,18 @@ export default {
         .then(res => {
           var data = res['data']['data']
           if (data === null) {
-            this.showRS = false
+            this.tableData = [{tid: '', gid: '', rid: '', showBtn: false, showTid: true, showRid: true}]
           } else {
-            this.showRS = true
+            this.tableData.length = 0
+            for (var i = 0; i < data['gids'].length; i++) {
+              var obj
+              if (i === 0) {
+                obj = {gid: data['gids'][i], tid: data['tid'], rid: data['rid'], showBtn: false, showTid: true, showRid: true}
+              } else {
+                obj = {gid: data['gids'][i], tid: data['tid'], rid: data['rid'], showBtn: true, showTid: false, showRid: false}
+              }
+              this.tableData.push(obj)
+            }
           }
           this.querying = false
         })
@@ -98,6 +108,80 @@ export default {
           this.$message.error(err)
           this.querying = false
         })
+    },
+    insertgidtidrid: function () {
+      if (this.tableData[0].tid === '') {
+        this.$message.error('玩家账号不能为空')
+        return
+      }
+      if (this.tableData[0].gid === '') {
+        this.$message.error('游戏ID不能为空')
+        return
+      }
+      this.$confirm('是否确认提交数据?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+        center: true
+      }).then(() => {
+        this.querying = true
+        var arr = []
+        for (var i = 0; i < this.tableData.length; i++) {
+          let gid = this.tableData[i].gid
+          if (gid !== '') {
+            arr.push(gid)
+          }
+        }
+        var json = {tid: this.tableData[0].tid, rid: this.tableData[0].rid, gids: arr}
+        this.$http.post(this.global.serverPath + '/insertgidtidrid', JSON.stringify(json))
+          .then(res => {
+            var code = res['data']['code']
+            var msg = this.global.codeError[code]
+            if (msg === undefined) {
+              this.$message({message: '提交成功', type: 'success'})
+            } else {
+              this.$message.error(msg)
+            }
+            this.querying = false
+          })
+          .catch(err => {
+            this.$message.error(err)
+            this.querying = false
+          })
+      }).catch(() => {
+      })
+    },
+    gidChange: function (value, index) {
+      if (value === '') {
+        if (this.tableData.length > 1) {
+          this.tableData.splice(index + 1, 1)
+        }
+      } else {
+        if (index === this.tableData.length - 1) {
+          let obj = {tid: '', gid: '', rid: '', showBtn: true, showTid: false, showRid: false}
+          this.tableData.push(obj)
+        }
+      }
+      if (this.tableData.length > 1) {
+        this.tableData[0].showBtn = true
+      } else {
+        this.tableData[0].showBtn = false
+      }
+    },
+    deleteRow: function (index) {
+      if (index === 0) {
+        this.tableData[1].tid = this.tableData[0].tid
+        this.tableData[1].rid = this.tableData[0].rid
+        this.tableData[1].showBtn = true
+        this.tableData[1].showTid = true
+        this.tableData[1].showRid = true
+      }
+      this.tableData.splice(index, 1)
+      if (this.tableData.length > 1) {
+        this.tableData[0].showBtn = true
+      } else {
+        this.tableData[0].showBtn = false
+      }
     }
   }
 }
@@ -120,6 +204,15 @@ export default {
 }
 .d2{
   margin:auto;
+  width:1000px;
+}
+.d3{
+  padding-top:20px;
+  margin:auto;
   width:500px;
+  text-align: center;
+}
+.removeBtn{
+ margin-left:31px;
 }
 </style>
