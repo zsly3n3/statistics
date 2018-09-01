@@ -4,7 +4,9 @@
     element-loading-spinner="el-icon-loading"
     element-loading-background="rgba(0, 0, 0, 0.8)">
     <div class="title">
+      <el-button class="btnImport" type="primary" @click="uploadFile">导入Excel</el-button>
       <el-button class="btnInsert" type="primary" @click="addRow">新增</el-button>
+      <el-button class="btnDel" type="danger" @click="delRow">删除</el-button>
       <el-date-picker
       class="datePicker"
       v-model="timestampValue"
@@ -164,18 +166,14 @@
       </template>
     </el-table-column>
 </el-table>
-<!--
-<button @click="test"></button>
-<br>
-<br>
-<input type="file" @change="importFile(this)" id="imFile" style="display: none" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"/>
-<el-button class="button" @click="uploadFile()">导入</el-button> -->
-<!-- <el-dialog title="提示" v-model="errorDialog" size="tiny">
+
+<input type="file" @change="importFile2(this)" id="imFile" style="display: none" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"/>
+<el-dialog title="提示" v-model="errorDialog">
 <span>{{errorMsg}}</span>
 <span slot="footer" class="dialog-footer">
     <el-button type="primary" @click="errorDialog=false">确认</el-button>
 </span>
-</el-dialog> -->
+</el-dialog>
 </div>
 </template>
 <script>
@@ -272,14 +270,8 @@ export default {
     },
     handleSelectionChange: function (val) {
       this.multipleSelection = val
-      console.log(this.multipleSelection)
-    },
-    test: function () {
-      console.log(this.value7[0])
-      console.log(this.value7[1])
     },
     arrToJsonString: function (obj) {
-      console.log(JSON.stringify(obj))
     },
     uploadFile: function () {
       this.imFile.click()
@@ -302,7 +294,6 @@ export default {
           $t.wb = XLSX.read(data, {type: 'binary'})
         }
         let json = XLSX.utils.sheet_to_json($t.wb.Sheets[$t.wb.SheetNames[0]])
-        console.log(typeof json)
         $t.dealFile($t.analyzeData(json)) // analyzeData: 解析导入数据
       }
       if (this.rABS) {
@@ -316,6 +307,7 @@ export default {
       var rABS = false
       var f = this.file
       var reader = new FileReader()
+      let $t = this
       FileReader.prototype.readAsBinaryString = function (f) {
         var binary = ''
         var rABS = false
@@ -325,7 +317,8 @@ export default {
         reader.onload = function (e) {
           var bytes = new Uint8Array(reader.result)
           var length = bytes.byteLength
-          for (var i = 0; i < length; i++) {
+          var i
+          for (i = 0; i < length; i++) {
             binary += String.fromCharCode(bytes[i])
           }
           if (rABS) {
@@ -339,14 +332,20 @@ export default {
           }
           outdata = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]])
           this.da = [...outdata]
-          let arr = []
-          this.da.map(v => {
-            let obj = {}
-            obj.size = v.size
-            obj.name = v.name
-            arr.push(obj)
-          })
-          console.log(arr)
+          if (this.da.length >= 2) {
+            $t.excelData.length = 0
+            for (i = 1; i < this.da.length; i++) {
+              let obj = this.da[i]
+              var tmpData = $t.createTmpData($t)
+              tmpData.tableId = obj.tableId
+              tmpData.gid = obj.gid
+              tmpData.score = obj.score
+              tmpData.record = obj.record
+              tmpData.baoxian = obj.baoxian
+              tmpData.leagueId = $t.getLeagueId(obj.league, $t)
+              $t.excelData.push(tmpData)
+            }
+          }
         }
         reader.readAsArrayBuffer(f)
       }
@@ -360,15 +359,28 @@ export default {
       return data
     },
     dealFile: function (data) {
-      console.log(data)
       this.imFile.value = ''
       this.querying = false
-      if (data.length <= 0) {
+      if (data.length <= 1) {
         this.errorDialog = true
         this.errorMsg = '请导入正确信息'
       } else {
-        this.excelData = data
-        console.log(this.arrToJsonString(data))
+        let $t = this
+        $t.excelData.length = 0
+        var arr = []
+        for (var i = 1; i < data.length; i++) {
+          let obj = data[i]
+          var tmpData = $t.createTmpData($t)
+          tmpData.tableId = obj.tableId
+          tmpData.gid = obj.gid
+          tmpData.score = obj.score
+          tmpData.record = obj.record
+          tmpData.baoxian = obj.baoxian
+          tmpData.leagueId = $t.getLeagueId(obj.league, $t)
+          $t.excelData.push(tmpData)
+          arr.push(obj.gid)
+        }
+        $t.getTRs($t, arr)
       }
     },
     fixdata: function (data) {
@@ -382,12 +394,16 @@ export default {
       return o
     },
     addRow: function () {
-      var tmpData = {isCheck: false, isSettled: false, isTimeOut: false, time: null, isShowReferrer: false, tid_id: 0, rid_id: 0, tableId: '', leagueId: '', gid: '', tid: '', rid: '', score: '', record: '', percent: 0, jieyu: '', baoxian: '', baoxianfanli: 0.1, baoxianrs: '', rgainper: 0.1, rgain: '', percents: null, fanli: null, jiesuan: null, types: null}
-      tmpData.percents = this.percents
-      tmpData.types = this.types
-      tmpData.fanli = this.fanli
-      tmpData.jiesuan = this.jiesuan
+      let tmpData = this.createTmpData(this)
       this.excelData.splice(0, 0, tmpData)
+    },
+    createTmpData: function ($t) {
+      var tmpData = {isSettled: false, isTimeOut: false, time: null, isShowReferrer: false, tid_id: 0, rid_id: 0, tableId: '', leagueId: '', gid: '', tid: '', rid: '', score: '', record: '', percent: 0, jieyu: '', baoxian: '', baoxianfanli: 0.1, baoxianrs: '', rgainper: 0.1, rgain: '', percents: null, fanli: null, jiesuan: null, types: null}
+      tmpData.percents = $t.percents
+      tmpData.types = $t.types
+      tmpData.fanli = $t.fanli
+      tmpData.jiesuan = $t.jiesuan
+      return tmpData
     },
     postData: function () {
       var date = this.excelData[0].time
@@ -401,7 +417,7 @@ export default {
       this.$http.get(this.global.serverPath + url)
         .then(res => {
           let data = res['data']['data']
-          if (data === null) {
+          if (data === null || data === undefined) {
             this.querying = false
             this.excelData[index].tid = ''
             this.excelData[index].rid = ''
@@ -423,7 +439,34 @@ export default {
           this.querying = false
         })
     },
-    getTRs: function () {
+    getTRs: function ($t, arr) {
+      $t.querying = true
+      $t.$http.post($t.global.serverPath + '/getTRWithGNames', JSON.stringify({gids: arr}))
+        .then(res => {
+          let data = res['data']['data']
+          for (var i = 0; i < data.length; i++) {
+            let obj = data[i]
+            if (obj === null || obj === undefined) {
+              $t.excelData[i].tid = ''
+              $t.excelData[i].rid = ''
+              $t.excelData[i].tid_id = 0
+              $t.excelData[i].rid_id = 0
+              $t.excelData[i].isShowReferrer = false
+            } else {
+              $t.excelData[i].tid = obj['tid']
+              $t.excelData[i].rid = obj['rid']
+              $t.excelData[i].tid_id = obj['tid_id']
+              let ridId = obj['rid_id']
+              $t.excelData[i].rid_id = ridId
+              $t.excelData[i].isShowReferrer = ridId <= 0 ? 'false' : 'true'
+            }
+          }
+          $t.querying = false
+        })
+        .catch(err => {
+          $t.querying = false
+          $t.$message.error(err)
+        })
     },
     computeJieYu: function (index) {
       let score = this.getNumber(this.excelData[index].score, index, 'score', '带入积分')
@@ -467,23 +510,24 @@ export default {
       for (var i = 0; i < this.excelData.length; i++) {
         let date = this.excelData[i].time
         var rs = false
-        if (date !== null) {
-          let current = new Date()
-          let hour = date.getHours()
-          let min = date.getMinutes()
-          let sec = date.getSeconds()
-          let cH = current.getHours()
-          let cM = current.getMinutes()
-          let cS = current.getSeconds()
-          if (cH > hour) {
+        if (date === undefined || date === null) {
+          return
+        }
+        let current = new Date()
+        let hour = date.getHours()
+        let min = date.getMinutes()
+        let sec = date.getSeconds()
+        let cH = current.getHours()
+        let cM = current.getMinutes()
+        let cS = current.getSeconds()
+        if (cH > hour) {
+          rs = true
+        } else if (cH === hour) {
+          if (cM > min) {
             rs = true
-          } else if (cH === hour) {
-            if (cM > min) {
+          } else if (cM === min) {
+            if (cS >= sec) {
               rs = true
-            } else if (cM === min) {
-              if (cS >= sec) {
-                rs = true
-              }
             }
           }
         }
@@ -504,6 +548,38 @@ export default {
         }
       }
       return rs
+    },
+    delRow: function () {
+      if (this.multipleSelection.length <= 0) {
+        return
+      }
+      this.$confirm('是否删除所选数据?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+        center: true
+      }).then(() => {
+        for (var i = 0; i < this.multipleSelection.length; i++) {
+          let obj = this.multipleSelection[i]
+          for (var j = 0; j < this.excelData.length; j++) {
+            if (this.excelData[j] === obj) {
+              this.excelData.splice(j, 1)
+              break
+            }
+          }
+        }
+      }).catch(() => {
+      })
+    },
+    getLeagueId: function (league, $t) {
+      let types = $t.types
+      for (var i = 0; i < types.length; i++) {
+        let obj = types[i]
+        if (league === obj.Name) {
+          return obj.Id
+        }
+      }
+      return ''
     }
   }
 }
@@ -530,7 +606,15 @@ export default {
 .button {
   margin-bottom: 20px;
 }
+.btnImport{
+  float: left;
+  margin-left:60px;
+}
 .btnInsert{
+  float: left;
+  margin-left:60px;
+}
+.btnDel{
   float: left;
   margin-left:60px;
 }
