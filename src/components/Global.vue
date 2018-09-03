@@ -1,5 +1,5 @@
 <script type="text/javascript">
-const serverPath = 'http://127.0.0.1:8181'
+const serverPath = 'http://14.29.123.151:8181'
 const levelKey = 'level'
 const codeError = {
   1: '参数错误,数据为空或者类型不对等',
@@ -10,9 +10,15 @@ const codeError = {
   6: 'xorm事务中Insert方法执行出错',
   7: 'xorm事务中Commit方法执行出错'
 }
+const isChrome = function () {
+  let u = navigator.appVersion
+  let webKit = u.indexOf('AppleWebKit') > -1
+  return webKit
+}
 export default{
   serverPath,
   codeError,
-  levelKey
+  levelKey,
+  isChrome
 }
 </script>

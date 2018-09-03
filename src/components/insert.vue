@@ -4,7 +4,18 @@
     element-loading-spinner="el-icon-loading"
     element-loading-background="rgba(0, 0, 0, 0.8)">
     <div class="title">
-      <el-button class="btnImport" type="primary" @click="uploadFile">导入Excel</el-button>
+      <el-upload class="btnImport"
+    ref="upload"
+    action="/wm/upload/"
+    :show-file-list="false"
+    :on-change="importFile"
+    :auto-upload="false">
+  <el-button
+   icon="el-icon-upload"
+      type="primary">
+    导入Excel
+  </el-button>
+</el-upload>
       <el-button class="btnInsert" type="primary" @click="addRow">新增</el-button>
       <el-button class="btnDel" type="danger" @click="delRow">删除</el-button>
       <el-date-picker
@@ -22,7 +33,7 @@
       </el-date-picker>
       <el-button class="btnCommit" type="success" @click="postData">提交</el-button>
     </div>
-<el-table
+<el-table max-height = "750"
     :data="excelData"
     :row-style="rowClass"
     @selection-change="handleSelectionChange"
@@ -166,8 +177,6 @@
       </template>
     </el-table-column>
 </el-table>
-
-<input type="file" @change="importFile2(this)" id="imFile" style="display: none" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"/>
 <el-dialog title="提示" v-model="errorDialog">
 <span>{{errorMsg}}</span>
 <span slot="footer" class="dialog-footer">
@@ -234,7 +243,6 @@ export default {
       excelData: [
       ],
       multipleSelection: [],
-      imFile: '', // 导入文件el
       errorDialog: false // 错误信息弹窗
     }
   },
@@ -252,7 +260,6 @@ export default {
         this.$message.error(err)
         this.querying = false
       })
-    this.imFile = document.getElementById('imFile')
     window.setInterval(this.computeTime, 1000)
   },
   activated: function () {
@@ -273,36 +280,35 @@ export default {
     },
     arrToJsonString: function (obj) {
     },
-    uploadFile: function () {
-      this.imFile.click()
-    },
-    importFile2: function () { // 导入excel
-      this.querying = true
-      let obj = this.imFile
-      if (!obj.files) {
-        this.querying = false
-        return
-      }
-      var f = obj.files[0]
-      var reader = new FileReader()
-      let $t = this
-      reader.onload = function (e) {
-        var data = e.target.result
-        if ($t.rABS) {
-          $t.wb = XLSX.read(btoa(this.fixdata(data)), {type: 'base64'})
-        } else {
-          $t.wb = XLSX.read(data, {type: 'binary'})
-        }
-        let json = XLSX.utils.sheet_to_json($t.wb.Sheets[$t.wb.SheetNames[0]])
-        $t.dealFile($t.analyzeData(json)) // analyzeData: 解析导入数据
-      }
-      if (this.rABS) {
-        reader.readAsArrayBuffer(f)
+    importFile: function (file) {
+      if (this.global.isChrome() === true) {
+        this.importFile1(file)
       } else {
-        reader.readAsBinaryString(f)
+        this.importFile2()
       }
     },
-    importFile: function () {
+    importFile1: function (file) { // 导入excel
+      const fileReader = new FileReader()
+      let $t = this
+      fileReader.onload = (ev) => {
+        try {
+          const data = ev.target.result
+          const workbook = XLSX.read(data, {
+            type: 'binary'
+          })
+          for (let sheet in workbook.Sheets) {
+            let json = XLSX.utils.sheet_to_json(workbook.Sheets[sheet])
+            $t.dealFile(json)
+            break
+          }
+        } catch (e) {
+          console.log(e)
+          this.$message.warning('文件类型不正确！')
+        }
+      }
+      fileReader.readAsBinaryString(file.raw)
+    },
+    importFile2: function () {
       this.file = event.currentTarget.files[0]
       var rABS = false
       var f = this.file
@@ -359,7 +365,6 @@ export default {
       return data
     },
     dealFile: function (data) {
-      this.imFile.value = ''
       this.querying = false
       if (data.length <= 1) {
         this.errorDialog = true
@@ -625,7 +630,6 @@ export default {
 .datePicker{
   width:370px;
 }
-
 /* .el-table--enable-row-hover .el-table__body tr:hover > td {
   background-color: blue !important;
 }

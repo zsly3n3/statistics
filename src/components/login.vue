@@ -29,6 +29,10 @@ export default {
   },
   methods: {
     login: function () {
+      if (this.account === '' || this.pwd === '') {
+        this.$message.error('账户和密码都不能为空!')
+        return
+      }
       this.$http.post(this.global.serverPath + '/login', JSON.stringify({name: this.account, pwd: this.pwd}))
         .then(res => {
           var code = res['data']['code']
