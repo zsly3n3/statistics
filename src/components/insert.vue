@@ -16,9 +16,7 @@
     导入Excel
   </el-button>
 </el-upload>
-      <el-button class="btnInsert" type="primary" @click="addRow">新增</el-button>
-      <el-button class="btnDel" type="danger" @click="delRow">删除</el-button>
-      <el-date-picker
+<!-- <el-date-picker
       class="datePicker"
       v-model="timestampValue"
       type="daterange"
@@ -30,10 +28,13 @@
       :picker-options="pickerOptions"
       format="yyyy 年 MM 月 dd 日"
       value-format="timestamp">
-      </el-date-picker>
+      </el-date-picker> -->
+      <el-button class="btnInsert" type="primary" @click="addRow">新增</el-button>
+      <el-button class="btnDel" type="danger" @click="delRow">删除</el-button>
       <el-button class="btnCommit" type="success" @click="postData">提交</el-button>
     </div>
-<el-table max-height = "750"
+<el-table
+    :max-height = "tableHeight"
     :data="excelData"
     :row-style="rowClass"
     @selection-change="handleSelectionChange"
@@ -41,6 +42,30 @@
     <el-table-column
       type="selection"
       width="55">
+    </el-table-column>
+    <el-table-column
+      label="序列"
+      width="55"
+      align="center">
+      <template slot-scope="scope">
+       <p>{{scope.$index+1}}</p>
+      </template>
+    </el-table-column>
+    <el-table-column
+        label="结算时间"
+        width="150"
+        align="center">
+      <template slot-scope="scope">
+        <el-time-picker style="width:120px;"
+    v-model="scope.row.time"
+    :picker-options="{
+      selectableRange: '00:00:00 - 23:59:00'
+    }"
+    format="HH:mm"
+    placeholder="选择时间"
+    v-on:change="computeRowTime(scope.$index)">
+  </el-time-picker>
+      </template>
     </el-table-column>
     <el-table-column
       label="桌号"
@@ -61,7 +86,7 @@
         </el-select>
       </template>
     </el-table-column>
-     <el-table-column
+    <el-table-column
       label="游戏ID"
       width="160"
       align="center">
@@ -80,51 +105,56 @@
       width="130"
       align="center">
       <template slot-scope="scope">
-       <el-input v-model="scope.row.score" placeholder="请输入积分" v-on:change="computeJieYu(scope.$index)"></el-input>
+       <el-input v-model="scope.row.score" placeholder="请输入积分" v-on:change="computeTotal(scope.$index)"></el-input>
       </template>
     </el-table-column>
     <el-table-column
-      label="战绩(正负数)"
-      width="212"
+      label="会员积分"
+      width="130"
       align="center">
       <template slot-scope="scope">
-       <el-input style="width:110px;" v-model="scope.row.record" placeholder="请输入战绩" v-on:change="computeJieYu(scope.$index)"></el-input>
-       <el-select v-on:change="computeJieYu(scope.$index)" style="width:76px;" v-model="scope.row.percent">
-          <el-option v-for="item in scope.row.percents" :key="item.label" :label="item.label" :value="item.value">
-       </el-option>
-       </el-select>
+       <el-input v-model="scope.row.memberScore" placeholder="会员积分" ></el-input>
       </template>
     </el-table-column>
-     <el-table-column
-        prop="jieyu"
-        label="结余"
-        width="100"
-        align="center">
+    <el-table-column
+      label="战绩"
+      width="130"
+      align="center">
+      <template slot-scope="scope">
+       <el-input v-model="scope.row.record" placeholder="请输入战绩" v-on:change="computeZJ(scope.$index, true)"></el-input>
+      </template>
     </el-table-column>
     <el-table-column
       label="保险"
       width="130"
       align="center">
       <template slot-scope="scope">
-       <el-input v-on:change="computeBaoXianHuoDongShu(scope.$index,true)" v-model="scope.row.baoxian" placeholder="请输入保险"></el-input>
-      </template>
-    </el-table-column>
- <el-table-column
-      label="保险返利"
-      width="110"
-      align="center">
-      <template slot-scope="scope">
-       <el-select v-on:change="computeBaoXianHuoDongShu(scope.$index,false)" v-model="scope.row.baoxianfanli">
-          <el-option v-for="item in scope.row.fanli" :key="item.label" :label="item.label" :value="item.value">
-       </el-option>
-       </el-select>
+       <el-input v-on:change="computeBX(scope.$index, true, true)" v-model="scope.row.baoxian" placeholder="请输入保险"></el-input>
       </template>
     </el-table-column>
      <el-table-column
-        prop="baoxianrs"
-        label="保险活动数"
-        width="160"
+        label="战绩结算"
+        width="130"
         align="center">
+      <template slot-scope="scope">
+       <el-input v-model="scope.row.zhanjirs" placeholder="战绩结算" v-on:change="computeTotal(scope.$index)"></el-input>
+      </template>
+    </el-table-column>
+     <el-table-column
+        label="保险结算"
+        width="130"
+        align="center">
+      <template slot-scope="scope">
+       <el-input v-model="scope.row.baoxianrs" placeholder="保险结算" v-on:change="computeTotal(scope.$index)"></el-input>
+      </template>
+    </el-table-column>
+    <el-table-column
+        label="总额"
+        width="130"
+        align="center">
+      <template slot-scope="scope">
+       <el-input v-model="scope.row.total" placeholder="总额"></el-input>
+      </template>
     </el-table-column>
     <el-table-column
         prop="rid"
@@ -133,36 +163,11 @@
         align="center">
     </el-table-column>
     <el-table-column
-      label="推荐人返利"
-      width="110"
-      align="center">
-      <template slot-scope="scope">
-       <el-select v-if="scope.row.isShowReferrer" v-on:change="computeRgain(scope.$index)" v-model="scope.row.rgainper">
-          <el-option v-for="item in scope.row.fanli" :key="item.label" :label="item.label" :value="item.value">
-       </el-option>
-       </el-select>
-      </template>
-    </el-table-column>
-    <el-table-column
-        label="推荐人返利结果"
-        width="120"
+        label="推荐人结算"
+        width="125"
         align="center">
       <template slot-scope="scope">
-       <p v-if="scope.row.isShowReferrer">{{scope.row.rgain}}</p>
-      </template>
-    </el-table-column>
-    <el-table-column
-        label="结算时间"
-        width="150"
-        align="center">
-      <template slot-scope="scope">
-        <el-time-picker style="width:120px;"
-    v-model="scope.row.time"
-    :picker-options="{
-      selectableRange: '00:00:00 - 23:59:00'
-    }"
-    placeholder="选择时间">
-  </el-time-picker>
+       <el-input v-if="scope.row.isShowReferrer" v-model="scope.row.rgain" placeholder="推荐人结算"></el-input>
       </template>
     </el-table-column>
   <el-table-column
@@ -191,6 +196,7 @@ export default {
   name: 'insert',
   data () {
     return {
+      tableHeight: 0,
       querying: false,
       pickerOptions: {
         shortcuts: [
@@ -225,16 +231,6 @@ export default {
       },
       timestampValue: '',
       types: [],
-      percents: [
-        {label: '0', value: 0.0},
-        {label: '3%', value: 0.97},
-        {label: '5%', value: 0.95}
-      ],
-      fanli: [
-        {label: '10%', value: 0.1},
-        {label: '15%', value: 0.15},
-        {label: '20%', value: 0.2}
-      ],
       jiesuan: [
         {label: 'x', value: false},
         {label: '√', value: true}
@@ -250,6 +246,7 @@ export default {
     this.$emit('isHideNav', false)
   },
   mounted: function () {
+    this.computeTableHeight()
     this.querying = true
     this.$http.get(this.global.serverPath + '/getleague')
       .then(res => {
@@ -260,12 +257,17 @@ export default {
         this.$message.error(err)
         this.querying = false
       })
-    window.setInterval(this.computeTime, 1000)
+    window.setInterval(this.computeTime, 1000 * 60)
   },
   activated: function () {
     this.$emit('switchroute', '/')
+    this.computeTableHeight()
   },
   methods: {
+    computeTableHeight: function () {
+      var tableHeight = document.documentElement.clientHeight - 64 - 60
+      this.tableHeight = tableHeight
+    },
     rowClass: function ({row, rowIndex}) {
       if (row.isSettled === true) {
         return {'background-color': 'red'}
@@ -349,6 +351,26 @@ export default {
               tmpData.record = obj.record
               tmpData.baoxian = obj.baoxian
               tmpData.leagueId = $t.getLeagueId(obj.league, $t)
+              tmpData.memberScore = obj.memberScore
+              if (obj.total !== undefined && obj.total !== null && obj.total !== '') {
+                tmpData.total = obj.total
+              }
+              if (obj.zhanjirs !== undefined && obj.zhanjirs !== null && obj.zhanjirs !== '') {
+                tmpData.zhanjirs = obj.zhanjirs
+              }
+              if (obj.baoxianrs !== undefined && obj.baoxianrs !== null && obj.baoxianrs !== '') {
+                tmpData.baoxianrs = obj.baoxianrs
+              }
+              if (obj.rgain !== undefined && obj.rgain !== null && obj.rgain !== '') {
+                tmpData.rgain = obj.rgain
+              }
+              if (obj.jiesuan !== undefined && obj.jiesuan !== null && obj.jiesuan === 'x') {
+                tmpData.isSettled = false
+              } else if (obj.jiesuan !== undefined && obj.jiesuan !== null && obj.jiesuan === '√') {
+                tmpData.isSettled = true
+              } else {
+                tmpData.isSettled = false
+              }
               $t.excelData.push(tmpData)
             }
           }
@@ -382,6 +404,26 @@ export default {
           tmpData.record = obj.record
           tmpData.baoxian = obj.baoxian
           tmpData.leagueId = $t.getLeagueId(obj.league, $t)
+          tmpData.memberScore = obj.memberScore
+          if (obj.total !== undefined && obj.total !== null && obj.total !== '') {
+            tmpData.total = obj.total
+          }
+          if (obj.zhanjirs !== undefined && obj.zhanjirs !== null && obj.zhanjirs !== '') {
+            tmpData.zhanjirs = obj.zhanjirs
+          }
+          if (obj.baoxianrs !== undefined && obj.baoxianrs !== null && obj.baoxianrs !== '') {
+            tmpData.baoxianrs = obj.baoxianrs
+          }
+          if (obj.rgain !== undefined && obj.rgain !== null && obj.rgain !== '') {
+            tmpData.rgain = obj.rgain
+          }
+          if (obj.jiesuan !== undefined && obj.jiesuan !== null && obj.jiesuan === 'x') {
+            tmpData.isSettled = false
+          } else if (obj.jiesuan !== undefined && obj.jiesuan !== null && obj.jiesuan === '√') {
+            tmpData.isSettled = true
+          } else {
+            tmpData.isSettled = false
+          }
           $t.excelData.push(tmpData)
           arr.push(obj.gid)
         }
@@ -403,10 +445,8 @@ export default {
       this.excelData.splice(0, 0, tmpData)
     },
     createTmpData: function ($t) {
-      var tmpData = {isSettled: false, isTimeOut: false, time: null, isShowReferrer: false, tid_id: 0, rid_id: 0, tableId: '', leagueId: '', gid: '', tid: '', rid: '', score: '', record: '', percent: 0, jieyu: '', baoxian: '', baoxianfanli: 0.1, baoxianrs: '', rgainper: 0.1, rgain: '', percents: null, fanli: null, jiesuan: null, types: null}
-      tmpData.percents = $t.percents
+      var tmpData = {tjrfbxl: 0, bxfl: 0, csl: 0, jiesuan: '', isSettled: false, isTimeOut: false, time: null, isShowReferrer: false, tid_id: 0, rid_id: 0, tableId: '', leagueId: '', gid: '', tid: '', rid: '', score: '', record: '', memberScore: '', total: '', baoxian: '', baoxianrs: '', zhanjirs: '', rgain: '', types: null}
       tmpData.types = $t.types
-      tmpData.fanli = $t.fanli
       tmpData.jiesuan = $t.jiesuan
       return tmpData
     },
@@ -429,6 +469,9 @@ export default {
             this.excelData[index].tid_id = 0
             this.excelData[index].rid_id = 0
             this.excelData[index].isShowReferrer = false
+            this.excelData[index].tjrfbxl = 0
+            this.excelData[index].csl = 0
+            this.excelData[index].bxfl = 0
             return
           }
           this.excelData[index].tid = data['tid']
@@ -436,7 +479,14 @@ export default {
           this.excelData[index].tid_id = data['tid_id']
           let ridId = data['rid_id']
           this.excelData[index].rid_id = ridId
-          this.excelData[index].isShowReferrer = ridId <= 0 ? 'false' : 'true'
+          var isShowReferrer = true
+          if (ridId <= 0) {
+            isShowReferrer = false
+          }
+          this.excelData[index].isShowReferrer = isShowReferrer
+          this.excelData[index].tjrfbxl = ridId <= 0 ? 0 : data['tjrfbxl']
+          this.excelData[index].csl = data['csl']
+          this.excelData[index].bxfl = data['bxfl']
           this.querying = false
         })
         .catch(err => {
@@ -457,13 +507,36 @@ export default {
               $t.excelData[i].tid_id = 0
               $t.excelData[i].rid_id = 0
               $t.excelData[i].isShowReferrer = false
+              $t.excelData[i].tjrfbxl = 0
+              $t.excelData[i].csl = 0
+              $t.excelData[i].bxfl = 0
             } else {
               $t.excelData[i].tid = obj['tid']
               $t.excelData[i].rid = obj['rid']
               $t.excelData[i].tid_id = obj['tid_id']
               let ridId = obj['rid_id']
               $t.excelData[i].rid_id = ridId
-              $t.excelData[i].isShowReferrer = ridId <= 0 ? 'false' : 'true'
+              var isShowReferrer = true
+              if (ridId <= 0) {
+                isShowReferrer = false
+              }
+              $t.excelData[i].isShowReferrer = isShowReferrer
+              $t.excelData[i].tjrfbxl = ridId <= 0 ? 0 : obj['tjrfbxl']
+              $t.excelData[i].csl = obj['csl']
+              $t.excelData[i].bxfl = obj['bxfl']
+            }
+            var isUpdateTotal = false
+            if ($t.excelData[i].total === '') {
+              isUpdateTotal = true
+            }
+            if ($t.excelData[i].rgain === '') {
+              $t.computeRgain(i, $t)
+            }
+            if ($t.excelData[i].zhanjirs === '') {
+              $t.computeZJ(i, isUpdateTotal, $t)
+            }
+            if ($t.excelData[i].baoxianrs === '') {
+              $t.computeBX(i, isUpdateTotal, false, $t)
             }
           }
           $t.querying = false
@@ -473,83 +546,98 @@ export default {
           $t.$message.error(err)
         })
     },
-    computeJieYu: function (index) {
-      let score = this.getNumber(this.excelData[index].score, index, 'score', '带入积分')
-      let record = this.getNumber(this.excelData[index].record, index, 'record', '战绩')
-      let percent = this.excelData[index].percent
-      var rs
+    computeZJ: function (index, isUpdateTotal, $t) {
+      if ($t === undefined || $t === null) {
+        $t = this
+      }
+      let record = $t.getNumber($t.excelData[index].record, index, 'record', '战绩')
+      let csl = parseFloat($t.excelData[index].csl)
+      var zhanjirs
       if (record > 0) {
-        let tmp = (record * percent).toFixed(0)
-        rs = Number(tmp) + score
+        let rs = 1 - (csl / parseFloat(100))
+        zhanjirs = rs * parseFloat(record)
       } else {
-        rs = record + score
+        zhanjirs = record
       }
-      this.excelData[index].jieyu = rs.toFixed(4)
-    },
-    computeBaoXianHuoDongShu: function (index, isUpdateReferrer) {
-      let bx = this.getNumber(this.excelData[index].baoxian, index, 'baoxian', '保险')
-      let percent = this.excelData[index].baoxianfanli
-      var rs
-      if (bx >= 0) {
-        rs = (bx * percent).toFixed(4)
-      } else {
-        rs = parseInt(bx * -(0.1))
-      }
-      this.excelData[index].baoxianrs = rs
-      if (isUpdateReferrer === true) {
-        this.computeRgain(index)
+      this.excelData[index].zhanjirs = zhanjirs.toFixed(0)
+      if (isUpdateTotal) {
+        $t.computeTotal(index, $t)
       }
     },
-    computeRgain: function (index) {
-      let bx = this.getNumber(this.excelData[index].baoxian, index, 'baoxian', '保险')
-      let percent = this.excelData[index].rgainper
-      var rs
-      if (bx > 0) {
-        rs = (bx * percent).toFixed(4)
-      } else {
-        rs = 0
+    computeBX: function (index, isUpdateTotal, isUpdateRgain, $t) {
+      if ($t === undefined || $t === null) {
+        $t = this
       }
-      this.excelData[index].rgain = rs
+      var baoxian = $t.getNumber($t.excelData[index].baoxian, index, 'baoxian', '保险')
+      let bxfl = parseFloat($t.excelData[index].bxfl) / parseFloat(100)
+      $t.excelData[index].baoxianrs = (parseFloat(Math.abs(baoxian)) * bxfl).toFixed(0)
+      if (isUpdateTotal) {
+        $t.computeTotal(index, $t)
+      }
+      if (isUpdateRgain) {
+        $t.computeRgain(index, $t)
+      }
+    },
+    computeRgain: function (index, $t) {
+      if ($t === undefined || $t === null) {
+        $t = this
+      }
+      let baoxian = $t.getNumber($t.excelData[index].baoxian, index, 'baoxian', '保险')
+      if (baoxian < 0) {
+        $t.excelData[index].rgain = 0
+      } else {
+        let rs = parseFloat($t.excelData[index].tjrfbxl) / parseFloat(100)
+        $t.excelData[index].rgain = (rs * parseFloat(baoxian)).toFixed(0)
+      }
+    },
+    computeTotal: function (index, $t) {
+      if ($t === undefined || $t === null) {
+        $t = this
+      }
+      let score = $t.getNumber($t.excelData[index].score, index, 'score', '带入积分')
+      let zhanjirs = $t.getNumber($t.excelData[index].zhanjirs, index, 'zhanjirs', '战绩结算')
+      let baoxianrs = $t.getNumber($t.excelData[index].baoxianrs, index, 'baoxianrs', '保险结算')
+      $t.excelData[index].total = (score + zhanjirs + baoxianrs).toFixed(0)
     },
     computeTime: function () {
       for (var i = 0; i < this.excelData.length; i++) {
-        let date = this.excelData[i].time
-        var rs = false
-        if (date === undefined || date === null) {
-          return
-        }
-        let current = new Date()
-        let hour = date.getHours()
-        let min = date.getMinutes()
-        let sec = date.getSeconds()
-        let cH = current.getHours()
-        let cM = current.getMinutes()
-        let cS = current.getSeconds()
-        if (cH > hour) {
-          rs = true
-        } else if (cH === hour) {
-          if (cM > min) {
-            rs = true
-          } else if (cM === min) {
-            if (cS >= sec) {
-              rs = true
-            }
-          }
-        }
-        this.excelData[i].isTimeOut = rs
+        this.computeRowTime(i)
       }
+    },
+    computeRowTime: function (index) {
+      let date = this.excelData[index].time
+      var rs = false
+      if (date === undefined || date === null) {
+        this.excelData[index].isTimeOut = false
+        return
+      }
+      let current = new Date()
+      let hour = date.getHours()
+      let min = date.getMinutes()
+      let cH = current.getHours()
+      let cM = current.getMinutes()
+      if (cH > hour) {
+        rs = true
+      } else if (cH === hour) {
+        if (cM >= min) {
+          rs = true
+        }
+      }
+      this.excelData[index].isTimeOut = rs
     },
     getNumber: function (str, index, key, field) {
       var rs
       if (str === '') {
         rs = 0
       } else {
-        rs = Number(str)
-        if (isNaN(rs)) {
+        rs = this.global.isNumber(str)
+        if (!rs) {
           let errStr = '第' + (index + 1) + '行中的' + field + '字段,输入的不是数字格式!'
           this.$message.error(errStr)
           this.excelData[index][key] = ''
           rs = 0
+        } else {
+          rs = this.global.handleSpecialNumber(str)
         }
       }
       return rs
@@ -593,9 +681,8 @@ export default {
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
 .title{
+  height: 64px;
   margin-top:20px;
-  text-align: center;
-  margin-bottom: 20px;
 }
 .tableDiv{
    /* width:100%; */

@@ -29,7 +29,7 @@
             <el-input v-if="scope.row.showTid" v-model="scope.row.tid" ></el-input>
           </template>
         </el-table-column>
-        <el-table-column label="游戏ID">
+        <el-table-column label="游戏ID" >
           <template slot-scope="scope">
             <el-input v-on:change="gidChange(scope.row.gid,scope.$index)" style="width:300px;" v-model="scope.row.gid"></el-input>
             <el-button v-if="scope.row.showBtn" class="removeBtn" size="mini" type="danger" @click="deleteRow(scope.$index)">删除</el-button>
@@ -38,6 +38,21 @@
         <el-table-column label="推荐人" width="280">
           <template slot-scope="scope">
             <el-input v-if="scope.row.showRid" v-model="scope.row.rid"></el-input>
+          </template>
+        </el-table-column>
+        <el-table-column label="抽水率" width="150">
+          <template slot-scope="scope">
+            <el-input v-if="scope.row.showRid" v-model="scope.row.csl"></el-input>
+          </template>
+        </el-table-column>
+        <el-table-column label="保险返率" width="150">
+          <template slot-scope="scope">
+            <el-input v-if="scope.row.showRid" v-model="scope.row.bxfl"></el-input>
+          </template>
+        </el-table-column>
+        <el-table-column label="推荐人返保险率" width="150">
+          <template slot-scope="scope">
+            <el-input v-if="scope.row.showRid" v-model="scope.row.tjrfbxl"></el-input>
           </template>
         </el-table-column>
       </el-table>
@@ -52,6 +67,9 @@ export default {
   name: 'gameid',
   data () {
     return {
+      choushuilvKey: 'csl',
+      baoxianfanlvKey: 'bxfl',
+      tuijianrenfanlvKey: 'tjrfbxl',
       querying: false,
       queryIndex: 0,
       queryText: '',
@@ -59,7 +77,7 @@ export default {
         {label: '玩家账号', id: 0}, {label: '游戏ID', id: 1}, {label: '推荐人', id: 2}
       ],
       tableData: [
-        {tid: '', gid: '', rid: '', showBtn: false, showTid: true, showRid: true}
+        {tid: '', gid: '', rid: '', showBtn: false, showTid: true, showRid: true, 'csl': '', 'bxfl': '', 'tjrfbxl': ''}
       ]
     }
   },
@@ -96,8 +114,13 @@ export default {
               var obj
               if (i === 0) {
                 obj = {gid: data['gids'][i], tid: data['tid'], rid: data['rid'], showBtn: false, showTid: true, showRid: true}
+                obj[this.choushuilvKey] = data[this.choushuilvKey]
+                obj[this.baoxianfanlvKey] = data[this.baoxianfanlvKey]
+                if (data['rid'] !== '') {
+                  obj[this.tuijianrenfanlvKey] = data[this.tuijianrenfanlvKey]
+                }
               } else {
-                obj = {gid: data['gids'][i], tid: data['tid'], rid: data['rid'], showBtn: true, showTid: false, showRid: false}
+                obj = {gid: data['gids'][i], showBtn: true, showTid: false, showRid: false}
               }
               this.tableData.push(obj)
             }
@@ -118,6 +141,37 @@ export default {
         this.$message.error('游戏ID不能为空')
         return
       }
+      var choushuilv = this.tableData[0].csl
+      if (choushuilv === '') {
+        this.$message.error('抽水率不能为空')
+        return
+      }
+      if (!this.global.isNumber(choushuilv)) {
+        this.$message.error('抽水率只能为数字')
+        return
+      }
+      var baoxianfanlv = this.tableData[0].bxfl
+      if (baoxianfanlv === '') {
+        this.$message.error('保险返率不能为空')
+        return
+      }
+      if (!this.global.isNumber(baoxianfanlv)) {
+        this.$message.error('保险返率只能为数字')
+        return
+      }
+      var tuijianrenfanlv = this.tableData[0].tjrfbxl
+      if (this.tableData[0].rid === '') {
+        this.tableData[0].tjrfbxl = ''
+      } else {
+        if (tuijianrenfanlv === '') {
+          this.$message.error('推荐人返保险率不能为空')
+          return
+        }
+        if (!this.global.isNumber(tuijianrenfanlv)) {
+          this.$message.error('推荐人返保险率只能为数字')
+          return
+        }
+      }
       this.$confirm('是否确认提交数据?', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
@@ -132,7 +186,13 @@ export default {
             arr.push(gid)
           }
         }
-        var json = {tid: this.tableData[0].tid, rid: this.tableData[0].rid, gids: arr}
+        choushuilv = this.global.handleSpecialNumber(Number(choushuilv))
+        baoxianfanlv = this.global.handleSpecialNumber(Number(baoxianfanlv))
+        var json = {tid: this.tableData[0].tid, rid: this.tableData[0].rid, gids: arr, csl: choushuilv, bxfl: baoxianfanlv}
+        if (tuijianrenfanlv !== '') {
+          tuijianrenfanlv = this.global.handleSpecialNumber(Number(tuijianrenfanlv))
+          json[this.tuijianrenfanlvKey] = tuijianrenfanlv
+        }
         this.$http.post(this.global.serverPath + '/insertgidtidrid', JSON.stringify(json))
           .then(res => {
             var code = res['data']['code']
@@ -204,7 +264,7 @@ export default {
 }
 .d2{
   margin:auto;
-  width:1000px;
+  width:1450px;
 }
 .d3{
   padding-top:20px;

@@ -1,5 +1,6 @@
 <script type="text/javascript">
-const serverPath = 'http://14.29.123.151:8181'
+// const serverPath = 'http://14.29.123.151:8181'
+const serverPath = 'http://127.0.0.1:8181'
 const levelKey = 'level'
 const codeError = {
   1: '参数错误,数据为空或者类型不对等',
@@ -15,10 +16,25 @@ const isChrome = function () {
   let webKit = u.indexOf('AppleWebKit') > -1
   return webKit
 }
+const isNumber = function (str) {
+  var rs = true
+  var re = /^(-?\d+)(\.\d+)?$/
+  if (!re.test(str)) {
+    rs = false
+  }
+  return rs
+}
+const handleSpecialNumber = function (number) {
+  var rs = number.toString()
+  rs = Number(rs)
+  return rs
+}
 export default{
   serverPath,
   codeError,
   levelKey,
-  isChrome
+  isChrome,
+  isNumber,
+  handleSpecialNumber
 }
 </script>
