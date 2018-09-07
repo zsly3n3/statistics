@@ -246,7 +246,7 @@ export default {
     this.$emit('isHideNav', false)
   },
   mounted: function () {
-    this.computeTableHeight()
+    this.computeTableHeight(this)
     this.querying = true
     this.$http.get(this.global.serverPath + '/getleague')
       .then(res => {
@@ -257,16 +257,21 @@ export default {
         this.$message.error(err)
         this.querying = false
       })
+    let $t = this
+    window.onresize = function () {
+      $t.computeTableHeight($t)
+    }
     window.setInterval(this.computeTime, 1000 * 60)
   },
   activated: function () {
     this.$emit('switchroute', '/')
-    this.computeTableHeight()
+    this.computeTableHeight(this)
   },
   methods: {
-    computeTableHeight: function () {
+    computeTableHeight: function ($t) {
       var tableHeight = document.documentElement.clientHeight - 64 - 60
-      this.tableHeight = tableHeight
+      tableHeight = tableHeight - 30
+      $t.tableHeight = tableHeight
     },
     rowClass: function ({row, rowIndex}) {
       if (row.isSettled === true) {
