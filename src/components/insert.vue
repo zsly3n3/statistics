@@ -36,16 +36,16 @@
 <el-table
     :max-height = "tableHeight"
     :data="excelData"
-    :row-style="rowClass"
+    :cell-style="cellClass"
     @selection-change="handleSelectionChange"
     border>
     <el-table-column
       type="selection"
-      width="55">
+      width="50">
     </el-table-column>
     <el-table-column
       label="序列"
-      width="55"
+      width="50"
       align="center">
       <template slot-scope="scope">
        <p>{{scope.$index+1}}</p>
@@ -69,10 +69,10 @@
     </el-table-column>
     <el-table-column
       label="桌号"
-      width="130"
+      width="90"
       align="center">
       <template slot-scope="scope">
-       <el-input v-model="scope.row.tableId" placeholder="请输入桌号"></el-input>
+       <el-input :id="tableInputId+scope.$index" @keyup.enter.native="enterNext(0, scope.$index)" v-model="scope.row.tableId" placeholder="桌号"></el-input>
       </template>
     </el-table-column>
     <el-table-column
@@ -80,7 +80,7 @@
       width="110"
       align="center">
       <template slot-scope="scope">
-        <el-select v-model="scope.row.leagueId">
+        <el-select v-model="scope.row.leagueId" :id="leagueInputId+scope.$index" @keyup.enter.native="enterNext(1, scope.$index)">
           <el-option v-for="item in scope.row.types" :key="item.Id" :label="item.Name" :value="item.Id">
           </el-option>
         </el-select>
@@ -88,86 +88,86 @@
     </el-table-column>
     <el-table-column
       label="游戏ID"
-      width="160"
+      width="140"
       align="center">
       <template slot-scope="scope">
-       <el-input v-model="scope.row.gid" placeholder="请输入游戏ID" v-on:change="getTR(scope.$index)"></el-input>
+       <el-input :id="gidInputId+scope.$index" @keyup.enter.native="enterNext(2, scope.$index)" v-model="scope.row.gid" placeholder="游戏ID" v-on:change="getTR(scope.$index)"></el-input>
       </template>
     </el-table-column>
     <el-table-column
         prop="tid"
         label="玩家账号"
-        width="160"
+        width="140"
         align="center">
     </el-table-column>
     <el-table-column
       label="带入积分"
-      width="130"
+      width="90"
       align="center">
       <template slot-scope="scope">
-       <el-input v-model="scope.row.score" placeholder="请输入积分" v-on:change="computeTotal(scope.$index)"></el-input>
+       <el-input :id="scoreInputId+scope.$index" @keyup.enter.native="enterNext(3, scope.$index)" v-model="scope.row.score" placeholder="积分" v-on:change="computeTotal(scope.$index)"></el-input>
       </template>
     </el-table-column>
     <el-table-column
       label="会员积分"
-      width="130"
+      width="100"
       align="center">
       <template slot-scope="scope">
-       <el-input v-model="scope.row.memberScore" placeholder="会员积分" ></el-input>
+       <el-input :id="memberInputId+scope.$index" @keyup.enter.native="enterNext(4, scope.$index)" v-model="scope.row.memberScore" placeholder="" ></el-input>
       </template>
     </el-table-column>
     <el-table-column
       label="战绩"
-      width="130"
+      width="100"
       align="center">
       <template slot-scope="scope">
-       <el-input v-model="scope.row.record" placeholder="请输入战绩" v-on:change="computeZJ(scope.$index, true)"></el-input>
+       <el-input :id="recordInputId+scope.$index" @keyup.enter.native="enterNext(5, scope.$index)" v-model="scope.row.record" placeholder="战绩" v-on:change="computeZJ(scope.$index, true)"></el-input>
       </template>
     </el-table-column>
     <el-table-column
       label="保险"
-      width="130"
+      width="80"
       align="center">
       <template slot-scope="scope">
-       <el-input v-on:change="computeBX(scope.$index, true, true)" v-model="scope.row.baoxian" placeholder="请输入保险"></el-input>
+       <el-input :id="bxInputId+scope.$index" @keyup.enter.native="enterNext(6, scope.$index)" v-on:change="computeBX(scope.$index, true, true)" v-model="scope.row.baoxian" placeholder="保险"></el-input>
       </template>
     </el-table-column>
      <el-table-column
         label="战绩结算"
-        width="130"
+        width="90"
         align="center">
       <template slot-scope="scope">
-       <el-input v-model="scope.row.zhanjirs" placeholder="战绩结算" v-on:change="computeTotal(scope.$index)"></el-input>
+       <el-input :id="zjjsInputId+scope.$index" @keyup.enter.native="enterNext(7, scope.$index)" v-model="scope.row.zhanjirs" placeholder="" v-on:change="computeTotal(scope.$index)"></el-input>
       </template>
     </el-table-column>
      <el-table-column
         label="保险结算"
-        width="130"
+        width="90"
         align="center">
       <template slot-scope="scope">
-       <el-input v-model="scope.row.baoxianrs" placeholder="保险结算" v-on:change="computeTotal(scope.$index)"></el-input>
+       <el-input :id="bxjsInputId+scope.$index" @keyup.enter.native="enterNext(8, scope.$index)" v-model="scope.row.baoxianrs" placeholder="" v-on:change="computeTotal(scope.$index)"></el-input>
       </template>
     </el-table-column>
     <el-table-column
         label="总额"
-        width="130"
+        width="100"
         align="center">
       <template slot-scope="scope">
-       <el-input v-model="scope.row.total" placeholder="总额"></el-input>
+       <el-input :id="totalInputId+scope.$index" @keyup.enter.native="enterNext(9, scope.$index)" v-model="scope.row.total" placeholder="总额"></el-input>
       </template>
     </el-table-column>
     <el-table-column
         prop="rid"
         label="推荐人"
-        width="160"
+        width="140"
         align="center">
     </el-table-column>
     <el-table-column
         label="推荐人结算"
-        width="125"
+        width="100"
         align="center">
       <template slot-scope="scope">
-       <el-input v-if="scope.row.isShowReferrer" v-model="scope.row.rgain" placeholder="推荐人结算"></el-input>
+       <el-input :id="tjrjsInputId+scope.$index" @keyup.enter.native="enterNext(10, scope.$index)" v-if="scope.row.isShowReferrer" v-model="scope.row.rgain" placeholder=""></el-input>
       </template>
     </el-table-column>
   <el-table-column
@@ -196,6 +196,17 @@ export default {
   name: 'insert',
   data () {
     return {
+      tableInputId: 'table_',
+      leagueInputId: 'league_',
+      gidInputId: 'gid_',
+      scoreInputId: 'score_',
+      memberInputId: 'member_',
+      recordInputId: 'record_',
+      bxInputId: 'bx_',
+      zjjsInputId: 'zjjs_',
+      bxjsInputId: 'bxjs_',
+      totalInputId: 'total_',
+      tjrjsInputId: 'tjrjs_',
       tableHeight: 0,
       querying: false,
       pickerOptions: {
@@ -268,17 +279,61 @@ export default {
     this.computeTableHeight(this)
   },
   methods: {
+    enterNext: function (index, rowIndex) {
+      var el
+      switch (index) {
+        case 0:
+          el = document.getElementById(this.leagueInputId + rowIndex)
+          break
+        case 1:
+          el = document.getElementById(this.gidInputId + rowIndex)
+          break
+        case 2:
+          el = document.getElementById(this.scoreInputId + rowIndex)
+          break
+        case 3:
+          el = document.getElementById(this.memberInputId + rowIndex)
+          break
+        case 4:
+          el = document.getElementById(this.recordInputId + rowIndex)
+          break
+        case 5:
+          el = document.getElementById(this.bxInputId + rowIndex)
+          break
+        case 6:
+          el = document.getElementById(this.zjjsInputId + rowIndex)
+          break
+        case 7:
+          el = document.getElementById(this.bxjsInputId + rowIndex)
+          break
+        case 8:
+          el = document.getElementById(this.totalInputId + rowIndex)
+          break
+        case 9:
+          el = document.getElementById(this.tjrjsInputId + rowIndex)
+          if (el === null || el === undefined) {
+            el = document.getElementById(this.tableInputId + rowIndex)
+          }
+          break
+        case 10:
+          el = document.getElementById(this.tableInputId + rowIndex)
+          break
+      }
+      if (el !== undefined && el !== null) {
+        el.focus()
+      }
+    },
     computeTableHeight: function ($t) {
       var tableHeight = document.documentElement.clientHeight - 64 - 60
       tableHeight = tableHeight - 30
       $t.tableHeight = tableHeight
     },
-    rowClass: function ({row, rowIndex}) {
+    cellClass: function ({row, column, rowIndex, columnIndex}) {
       if (row.isSettled === true) {
-        return {'background-color': 'red'}
+        return {'background-color': 'rgb(197, 224, 178)'}
       }
-      if (row.isTimeOut === true) {
-        return {'background-color': 'blue'}
+      if (row.isTimeOut === true && columnIndex === 2) {
+        return {'background-color': 'red'}
       }
       return {'background-color': 'white'}
     },
@@ -722,6 +777,9 @@ export default {
 .datePicker{
   width:370px;
 }
+td.el-table_1_column_3.is-center{
+  background-color: red;
+}
 /* .el-table--enable-row-hover .el-table__body tr:hover > td {
   background-color: blue !important;
 }
@@ -731,7 +789,6 @@ background-color:blue !important;
 .el-table .warning-row {
   background: yellow !important;
 }
-
 .el-table .success-row {
   background: green !important;
 } */

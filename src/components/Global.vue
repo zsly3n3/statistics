@@ -1,6 +1,5 @@
 <script type="text/javascript">
-// const serverPath = 'http://14.29.123.151:8181'
-const serverPath = 'http://127.0.0.1:8181'
+const serverPath = 'http://14.29.123.151:8181'
 const levelKey = 'level'
 const codeError = {
   1: '参数错误,数据为空或者类型不对等',

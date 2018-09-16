@@ -23,36 +23,36 @@
     </div>
     <hr>
     <div class="d2">
-      <el-table :data="tableData" :border="true" style="width: 100%">
-        <el-table-column label="玩家账号" width="280">
+      <el-table :data="tableData" :border="true">
+        <el-table-column label="玩家账号" width="200">
           <template slot-scope="scope">
-            <el-input v-if="scope.row.showTid" v-model="scope.row.tid" ></el-input>
+            <el-input :id="wjzhInputId" v-if="scope.row.showTid" v-model="scope.row.tid" @keyup.enter.native="enterNext(0, scope.$index)"></el-input>
           </template>
         </el-table-column>
-        <el-table-column label="游戏ID" >
+        <el-table-column label="游戏ID" width="380">
           <template slot-scope="scope">
-            <el-input v-on:change="gidChange(scope.row.gid,scope.$index)" style="width:300px;" v-model="scope.row.gid"></el-input>
+            <el-input :id="gidInputId+scope.$index" v-on:change="gidChange(scope.row.gid,scope.$index)" style="width:240px;" v-model="scope.row.gid" @keyup.enter.native="enterNext(5, scope.$index)"></el-input>
             <el-button v-if="scope.row.showBtn" class="removeBtn" size="mini" type="danger" @click="deleteRow(scope.$index)">删除</el-button>
           </template>
         </el-table-column>
-        <el-table-column label="推荐人" width="280">
+        <el-table-column label="推荐人" width="200">
           <template slot-scope="scope">
-            <el-input v-if="scope.row.showRid" v-model="scope.row.rid"></el-input>
+            <el-input :id="tjrInputId" v-if="scope.row.showRid" v-model="scope.row.rid" @keyup.enter.native="enterNext(1, scope.$index)"></el-input>
           </template>
         </el-table-column>
-        <el-table-column label="抽水率" width="150">
+        <el-table-column label="抽水率" width="110">
           <template slot-scope="scope">
-            <el-input v-if="scope.row.showRid" v-model="scope.row.csl"></el-input>
+            <el-input :id="choushuilvKey" v-if="scope.row.showRid" v-model="scope.row.csl" @keyup.enter.native="enterNext(2, scope.$index)"></el-input>
           </template>
         </el-table-column>
-        <el-table-column label="保险返率" width="150">
+        <el-table-column label="保险返率" width="110">
           <template slot-scope="scope">
-            <el-input v-if="scope.row.showRid" v-model="scope.row.bxfl"></el-input>
+            <el-input :id="baoxianfanlvKey" v-if="scope.row.showRid" v-model="scope.row.bxfl" @keyup.enter.native="enterNext(3, scope.$index)"></el-input>
           </template>
         </el-table-column>
-        <el-table-column label="推荐人返保险率" width="150">
+        <el-table-column label="推荐人返保险率" width="130">
           <template slot-scope="scope">
-            <el-input v-if="scope.row.showRid" v-model="scope.row.tjrfbxl"></el-input>
+            <el-input :id="tuijianrenfanlvKey" v-if="scope.row.showRid" v-model="scope.row.tjrfbxl" @keyup.enter.native="enterNext(4, scope.$index)"></el-input>
           </template>
         </el-table-column>
       </el-table>
@@ -67,6 +67,9 @@ export default {
   name: 'gameid',
   data () {
     return {
+      gidInputId: 'gid',
+      wjzhInputId: 'wjzh',
+      tjrInputId: 'tjr',
       choushuilvKey: 'csl',
       baoxianfanlvKey: 'bxfl',
       tuijianrenfanlvKey: 'tjrfbxl',
@@ -77,7 +80,7 @@ export default {
         {label: '玩家账号', id: 0}, {label: '游戏ID', id: 1}, {label: '推荐人', id: 2}
       ],
       tableData: [
-        {tid: '', gid: '', rid: '', showBtn: false, showTid: true, showRid: true, 'csl': '', 'bxfl': '', 'tjrfbxl': ''}
+        {gid: '', rid: '', showBtn: false, showTid: true, showRid: true, 'csl': '', 'bxfl': '', 'tjrfbxl': ''}
       ]
     }
   },
@@ -85,6 +88,38 @@ export default {
     this.$emit('isHideNav', false)
   },
   methods: {
+    enterNext: function (index, rowIndex) {
+      var el
+      switch (index) {
+        case 0:
+          el = document.getElementById(this.gidInputId + rowIndex)
+          break
+        case 1:
+          el = document.getElementById(this.choushuilvKey)
+          break
+        case 2:
+          el = document.getElementById(this.baoxianfanlvKey)
+          break
+        case 3:
+          el = document.getElementById(this.tuijianrenfanlvKey)
+          break
+        case 4:
+          el = document.getElementById(this.wjzhInputId)
+          break
+        case 5:
+          el = document.getElementById(this.gidInputId + rowIndex)
+          let row = rowIndex + 1
+          if (row === this.tableData.length) {
+            el = document.getElementById(this.tjrInputId)
+          } else {
+            el = document.getElementById(this.gidInputId + row)
+          }
+          break
+      }
+      if (el !== undefined && el !== null) {
+        el.focus()
+      }
+    },
     queryTidGidRid: function () {
       if (this.queryText === '') {
         this.$message.error('输入内容不能为空')
@@ -150,6 +185,11 @@ export default {
         this.$message.error('抽水率只能为数字')
         return
       }
+      let nChoushuilv = Number(choushuilv)
+      if (nChoushuilv < 0 || nChoushuilv > 100) {
+        this.$message.error('抽水率只能输入0到100')
+        return
+      }
       var baoxianfanlv = this.tableData[0].bxfl
       if (baoxianfanlv === '') {
         this.$message.error('保险返率不能为空')
@@ -157,6 +197,11 @@ export default {
       }
       if (!this.global.isNumber(baoxianfanlv)) {
         this.$message.error('保险返率只能为数字')
+        return
+      }
+      let nbaoxianfanlv = Number(baoxianfanlv)
+      if (nbaoxianfanlv < 0 || nbaoxianfanlv > 100) {
+        this.$message.error('保险返率只能输入0到100')
         return
       }
       var tuijianrenfanlv = this.tableData[0].tjrfbxl
@@ -169,6 +214,11 @@ export default {
         }
         if (!this.global.isNumber(tuijianrenfanlv)) {
           this.$message.error('推荐人返保险率只能为数字')
+          return
+        }
+        let ntuijianrenfanlv = Number(tuijianrenfanlv)
+        if (ntuijianrenfanlv < 0 || ntuijianrenfanlv > 100) {
+          this.$message.error('推荐人返保险率只能输入0到100')
           return
         }
       }
@@ -264,7 +314,7 @@ export default {
 }
 .d2{
   margin:auto;
-  width:1450px;
+  width:100%;
 }
 .d3{
   padding-top:20px;
