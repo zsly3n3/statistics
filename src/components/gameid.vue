@@ -3,6 +3,7 @@
     element-loading-text="执行中"
     element-loading-spinner="el-icon-loading"
     element-loading-background="rgba(0, 0, 0, 0.8)">
+    <el-button class="clearBtn" type="danger" @click="clearAll">清空下列数据</el-button>
     <div class="d1">
      <table class="table1" cellpadding="0" cellspacing="0">
        <tr>
@@ -292,6 +293,17 @@ export default {
       } else {
         this.tableData[0].showBtn = false
       }
+    },
+    clearAll: function () {
+      this.$confirm('是否清空下列数据?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+        center: true
+      }).then(() => {
+        this.tableData = [{gid: '', rid: '', showBtn: false, showTid: true, showRid: true, 'csl': '', 'bxfl': '', 'tjrfbxl': ''}]
+      }).catch(() => {
+      })
     }
   }
 }
@@ -324,5 +336,10 @@ export default {
 }
 .removeBtn{
  margin-left:31px;
+}
+.clearBtn{
+  position: absolute;
+  margin-top: 15px;
+  margin-left: 60px;
 }
 </style>
