@@ -4,6 +4,7 @@ import login from '@/components/login'
 import gameid from '@/components/gameid'
 import insert from '@/components/insert'
 import global from '@/components/Global'
+import query from '@/components/query'
 Vue.prototype.global = global
 Vue.use(Router)
 
@@ -24,6 +25,11 @@ var router = new Router({
       path: '/gameid',
       name: 'gameid',
       component: gameid
+    },
+    {
+      path: '/query',
+      name: 'query',
+      component: query
     }
   ]
 })

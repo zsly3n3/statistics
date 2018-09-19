@@ -88,6 +88,9 @@ export default {
   created: function () {
     this.$emit('isHideNav', false)
   },
+  activated: function () {
+    this.$emit('switchroute', '/gameid')
+  },
   methods: {
     enterNext: function (index, rowIndex) {
       var el

@@ -7,7 +7,7 @@
     <tr>
     <td class="navTitleTabletd"><label :class="{ navTitlelabelVisited: isSubmitted1 }" id="btnHome" @click="switchRoute('/')" class="navTitlelabel" >数据导入</label></td>
     <td class="navTitleTabletd"><label :class="{ navTitlelabelVisited: isSubmitted2 }" id="btnAbout" @click="switchRoute('/gameid')" class="navTitlelabel" >账号关联</label></td>
-    <td class="navTitleTabletd"><label :class="{ navTitlelabelVisited: isSubmitted3 }" id="btnGallery" @click="switchRoute('/gallery')" class="navTitlelabel" >每日统计</label></td>
+    <td class="navTitleTabletd"><label :class="{ navTitlelabelVisited: isSubmitted3 }" id="btnGallery" @click="switchRoute('/query')" class="navTitlelabel" >每日统计</label></td>
     </tr>
     </table>
     <div id="navTitleline" v-bind:class="{ navTitlelineTransition: isTransition }"></div>
@@ -86,7 +86,7 @@ export default {
           lineWidth = btnAbout.offsetWidth
           marginLeft = btnHome.offsetWidth + marginRight
           break
-        case '/gallery':
+        case '/query':
           this.isSubmitted1 = false
           this.isSubmitted2 = false
           this.isSubmitted3 = true
