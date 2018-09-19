@@ -11,8 +11,9 @@ export default {
   data () {
     return {
       exportList: [
-        {name: '韩版设计时尚风衣大', number: 'MPM00112', salePrice: '￥999.00', stocknums: 3423, salesnums: 3423, sharenums: 3423},
-        {name: '韩版设计时尚', number: 'MPM00113', salePrice: '￥999.00', stocknums: 3423, salesnums: 3423, sharenums: 3423}
+        {name: '名称', number: '编号'},
+        {name: '韩版设计时尚', number: 'MPM00112'},
+        {name: '美版设计时尚', number: 'MPM00113'}
       ]
     }
   },
