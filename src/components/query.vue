@@ -56,16 +56,4 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-.font{
-font-size: 25px;
-}
-.d1{
-  text-align: center;
-}
-.d2{
-    text-align: center;
-}
-table{
-    margin: auto;
-}
 </style>

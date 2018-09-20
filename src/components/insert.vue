@@ -48,7 +48,7 @@
       width="50"
       align="center">
       <template slot-scope="scope">
-       <p>{{scope.$index+1}}</p>
+       <p>{{scope.row.rowIndex}}</p>
       </template>
     </el-table-column>
     <el-table-column
@@ -402,6 +402,7 @@ export default {
           this.da = [...outdata]
           if (this.da.length >= 2) {
             $t.excelData.length = 0
+            var arr = []
             for (i = 1; i < this.da.length; i++) {
               let obj = this.da[i]
               var tmpData = $t.createTmpData($t)
@@ -431,8 +432,10 @@ export default {
               } else {
                 tmpData.isSettled = false
               }
-              $t.excelData.push(tmpData)
+              $t.excelData.splice(0, 0, tmpData)
+              arr.splice(0, 0, obj.gid)
             }
+            $t.getTRs($t, arr)
           }
         }
         reader.readAsArrayBuffer(f)
@@ -484,8 +487,8 @@ export default {
           } else {
             tmpData.isSettled = false
           }
-          $t.excelData.push(tmpData)
-          arr.push(obj.gid)
+          $t.excelData.splice(0, 0, tmpData)
+          arr.splice(0, 0, obj.gid)
         }
         $t.getTRs($t, arr)
       }
@@ -502,6 +505,7 @@ export default {
     },
     addRow: function () {
       let tmpData = this.createTmpData(this)
+      tmpData.rowIndex = this.excelData.length + 1
       this.excelData.splice(0, 0, tmpData)
     },
     createTmpData: function ($t) {
