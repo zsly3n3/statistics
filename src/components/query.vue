@@ -1,6 +1,19 @@
 <template>
   <div>
 <el-button type="primary" v-on:click="downloadMater">导出</el-button>
+<el-date-picker
+      class="datePicker"
+      v-model="timestampValue"
+      type="daterange"
+      align="right"
+      unlink-panels
+      range-separator="至"
+      start-placeholder="开始日期"
+      end-placeholder="结束日期"
+      :picker-options="pickerOptions"
+      format="yyyy 年 MM 月 dd 日"
+      value-format="timestamp">
+      </el-date-picker>
   </div>
 </template>
 <script>
@@ -14,7 +27,39 @@ export default {
         {name: '名称', number: '编号'},
         {name: '韩版设计时尚', number: 'MPM00112'},
         {name: '美版设计时尚', number: 'MPM00113'}
-      ]
+      ],
+      pickerOptions: {
+        shortcuts: [
+          {
+            text: '最近一周',
+            onClick (picker) {
+              const end = new Date()
+              const start = new Date()
+              start.setTime(start.getTime() - 3600 * 1000 * 24 * 7)
+              picker.$emit('pick', [start, end])
+            }
+          },
+          {
+            text: '最近一个月',
+            onClick (picker) {
+              const end = new Date()
+              const start = new Date()
+              start.setTime(start.getTime() - 3600 * 1000 * 24 * 30)
+              picker.$emit('pick', [start, end])
+            }
+          },
+          {
+            text: '最近三个月',
+            onClick (picker) {
+              const end = new Date()
+              const start = new Date()
+              start.setTime(start.getTime() - 3600 * 1000 * 24 * 90)
+              picker.$emit('pick', [start, end])
+            }
+          }
+        ]
+      },
+      timestampValue: ''
     }
   },
   created: function () {

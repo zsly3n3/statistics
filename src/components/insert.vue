@@ -16,26 +16,13 @@
     导入Excel
   </el-button>
 </el-upload>
-<!-- <el-date-picker
-      class="datePicker"
-      v-model="timestampValue"
-      type="daterange"
-      align="right"
-      unlink-panels
-      range-separator="至"
-      start-placeholder="开始日期"
-      end-placeholder="结束日期"
-      :picker-options="pickerOptions"
-      format="yyyy 年 MM 月 dd 日"
-      value-format="timestamp">
-      </el-date-picker> -->
       <el-button class="btnInsert" type="primary" @click="addRow">新增</el-button>
       <el-button class="btnDel" type="danger" @click="delRow">删除</el-button>
       <el-button class="btnCommit" type="success" @click="postData">提交</el-button>
     </div>
 <el-table
     :max-height = "tableHeight"
-    :data="excelData"
+    :data="tableData"
     :cell-style="cellClass"
     @selection-change="handleSelectionChange"
     border>
@@ -63,7 +50,7 @@
     }"
     format="HH:mm"
     placeholder="选择时间"
-    v-on:change="computeRowTime(scope.$index)">
+    v-on:change="computeRowTime(scope.$index,false)">
   </el-time-picker>
       </template>
     </el-table-column>
@@ -182,6 +169,14 @@
       </template>
     </el-table-column>
 </el-table>
+<el-pagination
+  background
+  layout="total, prev, pager, next, jumper"
+  :page-size="pageSize"
+  :current-page.sync="currentPage"
+  :total="excelData.length"
+  @current-change="handleCurrentChange">
+</el-pagination>
 <el-dialog title="提示" v-model="errorDialog">
 <span>{{errorMsg}}</span>
 <span slot="footer" class="dialog-footer">
@@ -196,6 +191,9 @@ export default {
   name: 'insert',
   data () {
     return {
+      currentPage: 0,
+      pageSize: 8,
+      tableData: [],
       tableInputId: 'table_',
       leagueInputId: 'league_',
       gidInputId: 'gid_',
@@ -209,46 +207,13 @@ export default {
       tjrjsInputId: 'tjrjs_',
       tableHeight: 0,
       querying: false,
-      pickerOptions: {
-        shortcuts: [
-          {
-            text: '最近一周',
-            onClick (picker) {
-              const end = new Date()
-              const start = new Date()
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 7)
-              picker.$emit('pick', [start, end])
-            }
-          },
-          {
-            text: '最近一个月',
-            onClick (picker) {
-              const end = new Date()
-              const start = new Date()
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 30)
-              picker.$emit('pick', [start, end])
-            }
-          },
-          {
-            text: '最近三个月',
-            onClick (picker) {
-              const end = new Date()
-              const start = new Date()
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 90)
-              picker.$emit('pick', [start, end])
-            }
-          }
-        ]
-      },
-      timestampValue: '',
       types: [],
       jiesuan: [
         {label: 'x', value: false},
         {label: '√', value: true}
       ],
       errorMsg: '', // 错误信息内容
-      excelData: [
-      ],
+      excelData: [],
       multipleSelection: [],
       errorDialog: false // 错误信息弹窗
     }
@@ -435,6 +400,7 @@ export default {
               $t.excelData.splice(0, 0, tmpData)
               arr.splice(0, 0, obj.gid)
             }
+            $t.handleCurrentChange($t.currentPage)
             $t.getTRs($t, arr)
           }
         }
@@ -490,6 +456,7 @@ export default {
           $t.excelData.splice(0, 0, tmpData)
           arr.splice(0, 0, obj.gid)
         }
+        $t.handleCurrentChange($t.currentPage)
         $t.getTRs($t, arr)
       }
     },
@@ -507,6 +474,7 @@ export default {
       let tmpData = this.createTmpData(this)
       tmpData.rowIndex = this.excelData.length + 1
       this.excelData.splice(0, 0, tmpData)
+      this.handleCurrentChange(this.currentPage)
     },
     createTmpData: function ($t) {
       var tmpData = {tjrfbxl: 0, bxfl: 0, csl: 0, jiesuan: '', isSettled: false, isTimeOut: false, time: null, isShowReferrer: false, tid_id: 0, rid_id: 0, tableId: '', leagueId: '', gid: '', tid: '', rid: '', score: '', record: '', memberScore: '', total: '', baoxian: '', baoxianrs: '', zhanjirs: '', rgain: '', types: null}
@@ -520,7 +488,23 @@ export default {
       console.log(date.getMinutes())
       console.log(date.getSeconds())
     },
+    clearTR: function ($t, index) {
+      $t.excelData[index].tid = ''
+      $t.excelData[index].rid = ''
+      $t.excelData[index].tid_id = 0
+      $t.excelData[index].rid_id = 0
+      $t.excelData[index].isShowReferrer = false
+      $t.excelData[index].tjrfbxl = 0
+      $t.excelData[index].csl = 0
+      $t.excelData[index].bxfl = 0
+    },
     getTR: function (index) {
+      let 
+      let data = this.getDataWithIndex(index)
+      if (data.gid === '') {
+        this.clearTR(this, index)
+        return
+      }
       this.querying = true
       let url = '/getTRWithGName/' + this.excelData[index].gid
       this.$http.get(this.global.serverPath + url)
@@ -528,14 +512,7 @@ export default {
           let data = res['data']['data']
           if (data === null || data === undefined) {
             this.querying = false
-            this.excelData[index].tid = ''
-            this.excelData[index].rid = ''
-            this.excelData[index].tid_id = 0
-            this.excelData[index].rid_id = 0
-            this.excelData[index].isShowReferrer = false
-            this.excelData[index].tjrfbxl = 0
-            this.excelData[index].csl = 0
-            this.excelData[index].bxfl = 0
+            this.clearTR(this, index)
             return
           }
           this.excelData[index].tid = data['tid']
@@ -566,14 +543,7 @@ export default {
           for (var i = 0; i < data.length; i++) {
             let obj = data[i]
             if (obj === null || obj === undefined) {
-              $t.excelData[i].tid = ''
-              $t.excelData[i].rid = ''
-              $t.excelData[i].tid_id = 0
-              $t.excelData[i].rid_id = 0
-              $t.excelData[i].isShowReferrer = false
-              $t.excelData[i].tjrfbxl = 0
-              $t.excelData[i].csl = 0
-              $t.excelData[i].bxfl = 0
+              $t.clearTR($t, i)
             } else {
               $t.excelData[i].tid = obj['tid']
               $t.excelData[i].rid = obj['rid']
@@ -665,14 +635,20 @@ export default {
     },
     computeTime: function () {
       for (var i = 0; i < this.excelData.length; i++) {
-        this.computeRowTime(i)
+        this.computeRowTime(i, true)
       }
     },
-    computeRowTime: function (index) {
-      let date = this.excelData[index].time
+    computeRowTime: function (index, isLoop) {
+      var data
+      if (isLoop) {
+        data = this.excelData[index]
+      } else {
+        data = this.getDataWithIndex(index)
+      }
+      let date = data.time
       var rs = false
       if (date === undefined || date === null) {
-        this.excelData[index].isTimeOut = false
+        data.isTimeOut = false
         return
       }
       let current = new Date()
@@ -687,7 +663,13 @@ export default {
           rs = true
         }
       }
-      this.excelData[index].isTimeOut = rs
+      data.isTimeOut = rs
+    },
+    getDataWithIndex: function (index) {
+      let pagesize = this.pageSize
+      let currentpage = this.currentPage
+      let rsIndex = (currentpage - 1) * pagesize + index
+      return this.excelData[rsIndex]
     },
     getNumber: function (str, index, key, field) {
       var rs
@@ -737,6 +719,11 @@ export default {
         }
       }
       return ''
+    },
+    handleCurrentChange: function (val) {
+      let pagesize = this.pageSize
+      let currentpage = this.currentPage
+      this.tableData = this.excelData.slice((currentpage - 1) * pagesize, currentpage * pagesize)
     }
   }
 }
