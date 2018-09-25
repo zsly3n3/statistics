@@ -21,7 +21,7 @@
       <el-button class="btnCommit" type="success" @click="postData">提交</el-button>
     </div>
 <el-table
-    :max-height = "tableHeight"
+    :max-height="tableHeight"
     :data="tableData"
     :cell-style="cellClass"
     @selection-change="handleSelectionChange"
@@ -92,7 +92,7 @@
       width="90"
       align="center">
       <template slot-scope="scope">
-       <el-input :id="scoreInputId+scope.$index" @keyup.enter.native="enterNext(3, scope.$index)" v-model="scope.row.score" placeholder="积分" v-on:change="computeTotal(scope.$index)"></el-input>
+       <el-input :id="scoreInputId+scope.$index" @keyup.enter.native="enterNext(3, scope.$index)" v-model="scope.row.score" placeholder="积分" v-on:change="computeTotal(scope.$index,false)"></el-input>
       </template>
     </el-table-column>
     <el-table-column
@@ -108,7 +108,7 @@
       width="100"
       align="center">
       <template slot-scope="scope">
-       <el-input :id="recordInputId+scope.$index" @keyup.enter.native="enterNext(5, scope.$index)" v-model="scope.row.record" placeholder="战绩" v-on:change="computeZJ(scope.$index, true)"></el-input>
+       <el-input :id="recordInputId+scope.$index" @keyup.enter.native="enterNext(5, scope.$index)" v-model="scope.row.record" placeholder="战绩" v-on:change="computeZJ(scope.$index, true, false)"></el-input>
       </template>
     </el-table-column>
     <el-table-column
@@ -116,7 +116,7 @@
       width="80"
       align="center">
       <template slot-scope="scope">
-       <el-input :id="bxInputId+scope.$index" @keyup.enter.native="enterNext(6, scope.$index)" v-on:change="computeBX(scope.$index, true, true)" v-model="scope.row.baoxian" placeholder="保险"></el-input>
+       <el-input :id="bxInputId+scope.$index" @keyup.enter.native="enterNext(6, scope.$index)" v-on:change="computeBX(scope.$index, true, true, false)" v-model="scope.row.baoxian" placeholder="保险"></el-input>
       </template>
     </el-table-column>
      <el-table-column
@@ -124,7 +124,7 @@
         width="90"
         align="center">
       <template slot-scope="scope">
-       <el-input :id="zjjsInputId+scope.$index" @keyup.enter.native="enterNext(7, scope.$index)" v-model="scope.row.zhanjirs" placeholder="" v-on:change="computeTotal(scope.$index)"></el-input>
+       <el-input :id="zjjsInputId+scope.$index" @keyup.enter.native="enterNext(7, scope.$index)" v-model="scope.row.zhanjirs" placeholder="" v-on:change="computeTotal(scope.$index,false)"></el-input>
       </template>
     </el-table-column>
      <el-table-column
@@ -132,7 +132,7 @@
         width="90"
         align="center">
       <template slot-scope="scope">
-       <el-input :id="bxjsInputId+scope.$index" @keyup.enter.native="enterNext(8, scope.$index)" v-model="scope.row.baoxianrs" placeholder="" v-on:change="computeTotal(scope.$index)"></el-input>
+       <el-input :id="bxjsInputId+scope.$index" @keyup.enter.native="enterNext(8, scope.$index)" v-model="scope.row.baoxianrs" placeholder="" v-on:change="computeTotal(scope.$index,false)"></el-input>
       </template>
     </el-table-column>
     <el-table-column
@@ -192,7 +192,7 @@ export default {
   data () {
     return {
       currentPage: 0,
-      pageSize: 8,
+      pageSize: 5,
       tableData: [],
       tableInputId: 'table_',
       leagueInputId: 'league_',
@@ -366,7 +366,6 @@ export default {
           outdata = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]])
           this.da = [...outdata]
           if (this.da.length >= 2) {
-            $t.excelData.length = 0
             var arr = []
             for (i = 1; i < this.da.length; i++) {
               let obj = this.da[i]
@@ -397,8 +396,9 @@ export default {
               } else {
                 tmpData.isSettled = false
               }
-              $t.excelData.splice(0, 0, tmpData)
+              tmpData.rowIndex = $t.excelData.length + 1
               arr.splice(0, 0, obj.gid)
+              $t.excelData.splice(0, 0, tmpData)
             }
             $t.handleCurrentChange($t.currentPage)
             $t.getTRs($t, arr)
@@ -422,7 +422,6 @@ export default {
         this.errorMsg = '请导入正确信息'
       } else {
         let $t = this
-        $t.excelData.length = 0
         var arr = []
         for (var i = 1; i < data.length; i++) {
           let obj = data[i]
@@ -453,8 +452,9 @@ export default {
           } else {
             tmpData.isSettled = false
           }
-          $t.excelData.splice(0, 0, tmpData)
+          tmpData.rowIndex = $t.excelData.length + 1
           arr.splice(0, 0, obj.gid)
+          $t.excelData.splice(0, 0, tmpData)
         }
         $t.handleCurrentChange($t.currentPage)
         $t.getTRs($t, arr)
@@ -483,10 +483,7 @@ export default {
       return tmpData
     },
     postData: function () {
-      var date = this.excelData[0].time
-      console.log(date.getHours())
-      console.log(date.getMinutes())
-      console.log(date.getSeconds())
+      console.log(this.excelData)
     },
     clearTR: function ($t, index) {
       $t.excelData[index].tid = ''
@@ -499,35 +496,35 @@ export default {
       $t.excelData[index].bxfl = 0
     },
     getTR: function (index) {
-      let 
-      let data = this.getDataWithIndex(index)
+      let rsIndex = this.getDataIndex(index)
+      let data = this.excelData[rsIndex]
       if (data.gid === '') {
-        this.clearTR(this, index)
+        this.clearTR(this, rsIndex)
         return
       }
       this.querying = true
-      let url = '/getTRWithGName/' + this.excelData[index].gid
+      let url = '/getTRWithGName/' + data.gid
       this.$http.get(this.global.serverPath + url)
         .then(res => {
-          let data = res['data']['data']
-          if (data === null || data === undefined) {
+          let rsData = res['data']['data']
+          if (rsData === null || rsData === undefined) {
             this.querying = false
-            this.clearTR(this, index)
+            this.clearTR(this, rsIndex)
             return
           }
-          this.excelData[index].tid = data['tid']
-          this.excelData[index].rid = data['rid']
-          this.excelData[index].tid_id = data['tid_id']
-          let ridId = data['rid_id']
-          this.excelData[index].rid_id = ridId
+          data.tid = rsData['tid']
+          data.rid = rsData['rid']
+          data.tid_id = rsData['tid_id']
+          let ridId = rsData['rid_id']
+          data.rid_id = ridId
           var isShowReferrer = true
           if (ridId <= 0) {
             isShowReferrer = false
           }
-          this.excelData[index].isShowReferrer = isShowReferrer
-          this.excelData[index].tjrfbxl = ridId <= 0 ? 0 : data['tjrfbxl']
-          this.excelData[index].csl = data['csl']
-          this.excelData[index].bxfl = data['bxfl']
+          data.isShowReferrer = isShowReferrer
+          data.tjrfbxl = ridId <= 0 ? 0 : rsData['tjrfbxl']
+          data.csl = rsData['csl']
+          data.bxfl = rsData['bxfl']
           this.querying = false
         })
         .catch(err => {
@@ -541,37 +538,30 @@ export default {
         .then(res => {
           let data = res['data']['data']
           for (var i = 0; i < data.length; i++) {
+            let rsIndex = i
+            let rsData = $t.excelData[rsIndex]
             let obj = data[i]
             if (obj === null || obj === undefined) {
-              $t.clearTR($t, i)
+              $t.clearTR($t, rsIndex)
             } else {
-              $t.excelData[i].tid = obj['tid']
-              $t.excelData[i].rid = obj['rid']
-              $t.excelData[i].tid_id = obj['tid_id']
+              rsData.tid = obj['tid']
+              rsData.rid = obj['rid']
+              rsData.tid_id = obj['tid_id']
               let ridId = obj['rid_id']
-              $t.excelData[i].rid_id = ridId
+              rsData.rid_id = ridId
               var isShowReferrer = true
               if (ridId <= 0) {
                 isShowReferrer = false
               }
-              $t.excelData[i].isShowReferrer = isShowReferrer
-              $t.excelData[i].tjrfbxl = ridId <= 0 ? 0 : obj['tjrfbxl']
-              $t.excelData[i].csl = obj['csl']
-              $t.excelData[i].bxfl = obj['bxfl']
+              rsData.isShowReferrer = isShowReferrer
+              rsData.tjrfbxl = ridId <= 0 ? 0 : obj['tjrfbxl']
+              rsData.csl = obj['csl']
+              rsData.bxfl = obj['bxfl']
             }
-            var isUpdateTotal = false
-            if ($t.excelData[i].total === '') {
-              isUpdateTotal = true
-            }
-            if ($t.excelData[i].rgain === '') {
-              $t.computeRgain(i, $t)
-            }
-            if ($t.excelData[i].zhanjirs === '') {
-              $t.computeZJ(i, isUpdateTotal, $t)
-            }
-            if ($t.excelData[i].baoxianrs === '') {
-              $t.computeBX(i, isUpdateTotal, false, $t)
-            }
+            var isUpdateTotal = true
+            $t.computeRgain(rsIndex, true, $t)
+            $t.computeZJ(rsIndex, isUpdateTotal, true, $t)
+            $t.computeBX(rsIndex, isUpdateTotal, false, true, $t)
           }
           $t.querying = false
         })
@@ -580,12 +570,20 @@ export default {
           $t.$message.error(err)
         })
     },
-    computeZJ: function (index, isUpdateTotal, $t) {
+    computeZJ: function (index, isUpdateTotal, isRealIndex, $t) {
       if ($t === undefined || $t === null) {
         $t = this
       }
-      let record = $t.getNumber($t.excelData[index].record, index, 'record', '战绩')
-      let csl = parseFloat($t.excelData[index].csl)
+      var rsIndex
+      if (isRealIndex) {
+        rsIndex = index
+      } else {
+        rsIndex = $t.getDataIndex(index)
+      }
+      let data = $t.excelData[rsIndex]
+      let rowIndex = data.rowIndex
+      let record = $t.getNumber(data.record, rowIndex, 'record', '战绩')
+      let csl = parseFloat(data.csl)
       var zhanjirs
       if (record > 0) {
         let rs = 1 - (csl / parseFloat(100))
@@ -593,45 +591,69 @@ export default {
       } else {
         zhanjirs = record
       }
-      this.excelData[index].zhanjirs = zhanjirs.toFixed(0)
+      data.zhanjirs = zhanjirs.toFixed(0)
       if (isUpdateTotal) {
-        $t.computeTotal(index, $t)
+        $t.computeTotal(rsIndex, true, $t)
       }
     },
-    computeBX: function (index, isUpdateTotal, isUpdateRgain, $t) {
+    computeBX: function (index, isUpdateTotal, isUpdateRgain, isRealIndex, $t) {
       if ($t === undefined || $t === null) {
         $t = this
       }
-      var baoxian = $t.getNumber($t.excelData[index].baoxian, index, 'baoxian', '保险')
-      let bxfl = parseFloat($t.excelData[index].bxfl) / parseFloat(100)
-      $t.excelData[index].baoxianrs = (parseFloat(Math.abs(baoxian)) * bxfl).toFixed(0)
+      var rsIndex
+      if (isRealIndex) {
+        rsIndex = index
+      } else {
+        rsIndex = $t.getDataIndex(index)
+      }
+      let data = $t.excelData[rsIndex]
+      let rowIndex = data.rowIndex
+      var baoxian = $t.getNumber(data.baoxian, rowIndex, 'baoxian', '保险')
+      let bxfl = parseFloat(data.bxfl) / parseFloat(100)
+      data.baoxianrs = (parseFloat(Math.abs(baoxian)) * bxfl).toFixed(0)
       if (isUpdateTotal) {
-        $t.computeTotal(index, $t)
+        $t.computeTotal(rsIndex, true, $t)
       }
       if (isUpdateRgain) {
-        $t.computeRgain(index, $t)
+        $t.computeRgain(rsIndex, true, $t)
       }
     },
-    computeRgain: function (index, $t) {
+    computeRgain: function (index, isRealIndex, $t) {
       if ($t === undefined || $t === null) {
         $t = this
       }
-      let baoxian = $t.getNumber($t.excelData[index].baoxian, index, 'baoxian', '保险')
-      if (baoxian < 0) {
-        $t.excelData[index].rgain = 0
+      var rsIndex
+      if (isRealIndex) {
+        rsIndex = index
       } else {
-        let rs = parseFloat($t.excelData[index].tjrfbxl) / parseFloat(100)
-        $t.excelData[index].rgain = (rs * parseFloat(baoxian)).toFixed(0)
+        rsIndex = $t.getDataIndex(index)
+      }
+      let data = $t.excelData[rsIndex]
+      let rowIndex = data.rowIndex
+      let baoxian = $t.getNumber(data.baoxian, rowIndex, 'baoxian', '保险')
+      if (baoxian < 0) {
+        data.rgain = 0
+      } else {
+        let rs = parseFloat(data.tjrfbxl) / parseFloat(100)
+        data.rgain = (rs * parseFloat(baoxian)).toFixed(0)
       }
     },
-    computeTotal: function (index, $t) {
+    computeTotal: function (index, isRealIndex, $t) {
       if ($t === undefined || $t === null) {
         $t = this
       }
-      let score = $t.getNumber($t.excelData[index].score, index, 'score', '带入积分')
-      let zhanjirs = $t.getNumber($t.excelData[index].zhanjirs, index, 'zhanjirs', '战绩结算')
-      let baoxianrs = $t.getNumber($t.excelData[index].baoxianrs, index, 'baoxianrs', '保险结算')
-      $t.excelData[index].total = (score + zhanjirs + baoxianrs).toFixed(0)
+      var rsIndex
+      if (isRealIndex) {
+        rsIndex = index
+      } else {
+        rsIndex = $t.getDataIndex(index)
+      }
+      let data = $t.excelData[rsIndex]
+      let rowIndex = data.rowIndex
+      let score = $t.getNumber(data.score, rowIndex, 'score', '带入积分')
+      let zhanjirs = $t.getNumber(data.zhanjirs, rowIndex, 'zhanjirs', '战绩结算')
+      let baoxianrs = $t.getNumber(data.baoxianrs, rowIndex, 'baoxianrs', '保险结算')
+      data.total = (score + zhanjirs + baoxianrs).toFixed(0)
     },
     computeTime: function () {
       for (var i = 0; i < this.excelData.length; i++) {
@@ -643,7 +665,7 @@ export default {
       if (isLoop) {
         data = this.excelData[index]
       } else {
-        data = this.getDataWithIndex(index)
+        data = this.excelData[this.getDataIndex(index)]
       }
       let date = data.time
       var rs = false
@@ -665,11 +687,11 @@ export default {
       }
       data.isTimeOut = rs
     },
-    getDataWithIndex: function (index) {
+    getDataIndex: function (index) {
       let pagesize = this.pageSize
       let currentpage = this.currentPage
       let rsIndex = (currentpage - 1) * pagesize + index
-      return this.excelData[rsIndex]
+      return rsIndex
     },
     getNumber: function (str, index, key, field) {
       var rs
@@ -678,7 +700,7 @@ export default {
       } else {
         rs = this.global.isNumber(str)
         if (!rs) {
-          let errStr = '第' + (index + 1) + '行中的' + field + '字段,输入的不是数字格式!'
+          let errStr = '序列' + index + '的' + field + '字段,输入的不是数字格式!'
           this.$message.error(errStr)
           this.excelData[index][key] = ''
           rs = 0
@@ -702,7 +724,9 @@ export default {
           let obj = this.multipleSelection[i]
           for (var j = 0; j < this.excelData.length; j++) {
             if (this.excelData[j] === obj) {
+              let page = this.currentPage
               this.excelData.splice(j, 1)
+              this.reComputeCurrentPage(page)
               break
             }
           }
@@ -720,9 +744,38 @@ export default {
       }
       return ''
     },
+    reComputeCurrentPage: function (page) {
+      let total = this.excelData.length
+      let n = total / this.pageSize
+      let mod = total % this.pageSize
+      var pageNum
+      if (mod === 0) {
+        pageNum = n
+      } else {
+        pageNum = n + 1
+      }
+      var rspage = page
+      if (page > pageNum) {
+        rspage = pageNum
+      }
+      this.handleCurrentChange(rspage)
+      this.reComputeRowIndex()
+    },
+    reComputeRowIndex: function () {
+      var i
+      for (i = 0; i < this.excelData.length; i++) {
+        let data = this.excelData[i]
+        data.rowIndex = this.excelData.length - i
+      }
+    },
     handleCurrentChange: function (val) {
       let pagesize = this.pageSize
-      let currentpage = this.currentPage
+      var currentpage
+      if (val === undefined || val === null) {
+        currentpage = this.currentPage
+      } else {
+        currentpage = val
+      }
       this.tableData = this.excelData.slice((currentpage - 1) * pagesize, currentpage * pagesize)
     }
   }
