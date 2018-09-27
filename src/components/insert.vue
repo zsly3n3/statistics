@@ -39,18 +39,10 @@
     </el-table-column>
     <el-table-column
         label="结算时间"
-        width="150"
+        width="100"
         align="center">
       <template slot-scope="scope">
-        <el-time-picker style="width:120px;"
-    v-model="scope.row.time"
-    :picker-options="{
-      selectableRange: '00:00:00 - 23:59:00'
-    }"
-    format="HH:mm"
-    placeholder="选择时间"
-    v-on:change="computeRowTime(scope.$index,false)">
-  </el-time-picker>
+  <el-input :id="timeInputId+scope.$index" @keyup.enter.native="enterNext(-1, scope.$index)" v-model="scope.row.min" placeholder="分钟" v-on:change="saveTime(scope.$index)"></el-input>
       </template>
     </el-table-column>
     <el-table-column
@@ -58,7 +50,7 @@
       width="90"
       align="center">
       <template slot-scope="scope">
-       <el-input :id="tableInputId+scope.$index" @keyup.enter.native="enterNext(0, scope.$index)" v-model="scope.row.tableId" placeholder="桌号"></el-input>
+       <el-input :id="tableInputId+scope.$index" @keyup.enter.native="enterNext(0, scope.$index)" v-model="scope.row.tableId" placeholder="桌号" v-on:change="isAddRow(scope.$index)"></el-input>
       </template>
     </el-table-column>
     <el-table-column
@@ -196,6 +188,7 @@ export default {
       pageSize: 5,
       pageSizes: [],
       tableData: [],
+      timeInputId: 'time_',
       tableInputId: 'table_',
       leagueInputId: 'league_',
       gidInputId: 'gid_',
@@ -245,6 +238,9 @@ export default {
     enterNext: function (index, rowIndex) {
       var el
       switch (index) {
+        case -1:
+          el = document.getElementById(this.tableInputId + rowIndex)
+          break
         case 0:
           el = document.getElementById(this.leagueInputId + rowIndex)
           break
@@ -275,11 +271,11 @@ export default {
         case 9:
           el = document.getElementById(this.tjrjsInputId + rowIndex)
           if (el === null || el === undefined) {
-            el = document.getElementById(this.tableInputId + rowIndex)
+            el = document.getElementById(this.timeInputId + rowIndex)
           }
           break
         case 10:
-          el = document.getElementById(this.tableInputId + rowIndex)
+          el = document.getElementById(this.timeInputId + rowIndex)
           break
       }
       if (el !== undefined && el !== null) {
@@ -650,16 +646,28 @@ export default {
     },
     computeTime: function () {
       for (var i = 0; i < this.excelData.length; i++) {
-        this.computeRowTime(i, true)
+        this.computeRowTime(i)
       }
     },
-    computeRowTime: function (index, isLoop) {
-      var data
-      if (isLoop) {
-        data = this.excelData[index]
+    saveTime: function (index) {
+      let rsIndex = this.getDataIndex(index)
+      let data = this.excelData[rsIndex]
+      data.isTimeOut = false
+      data.time = null
+      let min = Number(data.min)
+      if (min <= 0 || min >= 10000 || isNaN(min)) {
+        let errStr = '序列' + data.rowIndex + '的结算时间,必须在1到10000分钟内!'
+        this.$message.error(errStr)
+        data.min = ''
       } else {
-        data = this.excelData[this.getDataIndex(index)]
+        let current = new Date()
+        let tmp = current.getMinutes()
+        current.setMinutes(tmp + min)
+        data.time = current
       }
+    },
+    computeRowTime: function (index) {
+      let data = this.excelData[index]
       let date = data.time
       var rs = false
       if (date === undefined || date === null) {
@@ -774,6 +782,13 @@ export default {
     handleSizeChange: function (val) {
       this.pageSize = val
       this.handleCurrentChange()
+    },
+    isAddRow: function (index) {
+      let rsIndex = this.getDataIndex(index)
+      let data = this.excelData[rsIndex]
+      if (rsIndex === 0 && data.tableId !== '') {
+        this.addRow()
+      }
     }
   }
 }
