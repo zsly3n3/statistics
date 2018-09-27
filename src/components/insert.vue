@@ -21,7 +21,6 @@
       <el-button class="btnCommit" type="success" @click="postData">提交</el-button>
     </div>
 <el-table
-    :max-height="tableHeight"
     :data="tableData"
     :cell-style="cellClass"
     @selection-change="handleSelectionChange"
@@ -208,7 +207,6 @@ export default {
       bxjsInputId: 'bxjs_',
       totalInputId: 'total_',
       tjrjsInputId: 'tjrjs_',
-      tableHeight: 0,
       querying: false,
       types: [],
       jiesuan: [
@@ -228,7 +226,6 @@ export default {
     this.$emit('isHideNav', false)
   },
   mounted: function () {
-    this.computeTableHeight(this)
     this.querying = true
     this.$http.get(this.global.serverPath + '/getleague')
       .then(res => {
@@ -239,15 +236,10 @@ export default {
         this.$message.error(err)
         this.querying = false
       })
-    let $t = this
-    window.onresize = function () {
-      $t.computeTableHeight($t)
-    }
     window.setInterval(this.computeTime, 1000 * 60)
   },
   activated: function () {
     this.$emit('switchroute', '/')
-    this.computeTableHeight(this)
   },
   methods: {
     enterNext: function (index, rowIndex) {
@@ -293,11 +285,6 @@ export default {
       if (el !== undefined && el !== null) {
         el.focus()
       }
-    },
-    computeTableHeight: function ($t) {
-      var tableHeight = document.documentElement.clientHeight - 64 - 60
-      tableHeight = tableHeight - 30
-      $t.tableHeight = tableHeight
     },
     cellClass: function ({row, column, rowIndex, columnIndex}) {
       if (row.isSettled === true) {
