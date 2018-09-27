@@ -171,10 +171,12 @@
 </el-table>
 <el-pagination
   background
-  layout="total, prev, pager, next, jumper"
+  layout="total, sizes, prev, pager, next, jumper"
   :page-size="pageSize"
+  :page-sizes="pageSizes"
   :current-page.sync="currentPage"
   :total="excelData.length"
+  @size-change="handleSizeChange"
   @current-change="handleCurrentChange">
 </el-pagination>
 <el-dialog title="提示" v-model="errorDialog">
@@ -193,6 +195,7 @@ export default {
     return {
       currentPage: 0,
       pageSize: 5,
+      pageSizes: [],
       tableData: [],
       tableInputId: 'table_',
       leagueInputId: 'league_',
@@ -219,6 +222,9 @@ export default {
     }
   },
   created: function () {
+    for (var i = 3; i <= 10; i++) {
+      this.pageSizes.push(i)
+    }
     this.$emit('isHideNav', false)
   },
   mounted: function () {
@@ -777,6 +783,10 @@ export default {
         currentpage = val
       }
       this.tableData = this.excelData.slice((currentpage - 1) * pagesize, currentpage * pagesize)
+    },
+    handleSizeChange: function (val) {
+      this.pageSize = val
+      this.handleCurrentChange()
     }
   }
 }
